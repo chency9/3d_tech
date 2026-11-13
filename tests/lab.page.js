@@ -6,7 +6,7 @@ export class LabPage {
     await expect.poll(()=>this.page.evaluate(()=>window.biomech?.state.ready)).toBe(true);
   }
   async specimen(name) {
-    await this.page.getByRole('button',{name:name==='bee'?/MELLIS/:/TELSON/}).click();
+    await this.page.locator(`[data-model="${name}"]`).click();
     await expect.poll(()=>this.page.evaluate(()=>[window.biomech.state.model,window.biomech.state.ready])).toEqual([name,true]);
   }
   async snapshot() { return this.page.evaluate(()=>({state:window.biomech.state,pose:window.biomech.pose,stats:window.biomech.stats})); }

@@ -87,14 +87,40 @@ body,#app{font-family:var(--cyber)}
 @media(min-width:1001px){.workspace{height:calc(100dvh - 36px)}}
 .viewport-switch{position:absolute;top:26px;right:34px;z-index:6;align-self:auto;display:flex;gap:6px;padding:4px;border:1px solid var(--line);background:var(--panel)}
 .viewport-switch button{min-width:176px;height:44px}
+.parts-grid[data-specimen="octopus"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .specimen-meta{top:100px}
 @media(max-width:1280px) and (min-width:1001px){.viewport-switch{right:24px}}
 @media(max-width:1000px){.viewport-switch{top:24px;right:25px}.viewport-switch button{min-width:135px}.specimen-meta{top:94px}}
 @media(max-width:600px){
   .viewport-switch{top:18px;right:18px;gap:3px;padding:3px}
-  .viewport-switch button{min-width:0;width:125px;height:38px;flex:0 0 auto;padding:0 9px;gap:6px}
-  .viewport-switch strong{font-size:14px}
+  .viewport-switch{max-width:calc(100% - 36px)}
+  .viewport-switch button{min-width:0;width:102px;height:38px;flex:1 1 0;padding:0 6px;gap:4px}
+  .viewport-switch strong{font-size:12px}
   .viewport-switch .specimen-number{font-size:8px}
   .specimen-heading{top:90px}
   .specimen-meta{top:99px}
+}
+
+/* Keep all eight subsystem buttons and five motions inside the desktop console. */
+@media(min-width:1201px){
+ .parts-grid[data-specimen="octopus"],.parts-grid[data-specimen="bee"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .parts-grid[data-specimen="octopus"] button,.parts-grid[data-specimen="bee"] button{font-size:10px}
+ .parts-grid[data-specimen="octopus"] button small,.parts-grid[data-specimen="bee"] button small{font-size:7px}
+ .motion-grid[data-specimen="octopus"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+/* Long OC-8 readings and labels must remain readable without overflowing. */
+@media(min-width:1001px){.workspace{min-height:1020px}}
+@media(max-width:1000px){.workspace{height:auto}}
+@media(max-width:600px){
+ .specimen-heading{right:18px}
+ .specimen-heading h1{font-size:clamp(28px,8.4vw,44px)}
+ #model-code{white-space:nowrap}
+ .reading{flex-wrap:wrap}
+ .frequency-panel .reading em{flex-basis:100%;margin:4px 0 0}
+ .gauge-layout{flex-wrap:wrap;gap:6px}
+ .gauge-layout .dial{margin-left:auto}
+ .right-panels{grid-template-columns:1fr}
+ .parts-grid,.parts-grid[data-specimen="scorpion"],.parts-grid[data-specimen="octopus"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .motion-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }

@@ -6,6 +6,7 @@ import { chromium, expect } from '@playwright/test';
 
 const dist = path.resolve('dist');
 const html = await readFile(path.join(dist, 'index.html'));
+const scorpionBytes=(await readFile(path.join(dist,'models/telson-sc8.glb'))).length;
 let releaseDownload;
 const downloadGate = new Promise(resolve => { releaseDownload = resolve; });
 let releaseMoreModel, releaseModel;
@@ -39,7 +40,7 @@ const server = http.createServer(async (request, response) => {
       response.end(bytes.subarray(Math.ceil(bytes.length * .75)));
       return;
     }
-    if (pathname.endsWith('/mellis-hb7.glb')) requestedModels.push(path.basename(asset));
+    if (/\/(mellis-hb7|pelagos-oc8)\.glb$/.test(pathname)) requestedModels.push(path.basename(asset));
     response.writeHead(200, { 'Content-Length': bytes.length });
     response.end(bytes);
   } catch {
@@ -66,7 +67,7 @@ try {
   releaseDownload();
   await expect(page.locator('#loading-percent')).toHaveText('25%');
   await expect(page.locator('#loading-progress')).toHaveAttribute('value', '25');
-  await expect(page.locator('#loading-detail')).toHaveText('4.0 / 15.8 MB');
+  await expect(page.locator('#loading-detail')).toHaveText(`${(Math.ceil(scorpionBytes/4)/1024/1024).toFixed(1)} / ${(scorpionBytes/1024/1024).toFixed(1)} MB`);
   assert.equal(await page.evaluate(() => window.initialLoader === document.querySelector('.boot-loader')), true);
   await expect(page.locator('#app')).toBeHidden();
   await expect(page.locator('#app')).toHaveAttribute('inert', '');
@@ -108,9 +109,12 @@ try {
   assert.ok(mobileSwitch.x >= 0 && mobileSwitch.x + mobileSwitch.width <= 390);
   await page.screenshot({ path: 'review/loading/viewport-tabs-mobile.png' });
   assert.ok(mobileSwitch.y + mobileSwitch.height < mobileHeading.y, JSON.stringify({ mobileSwitch, mobileHeading }));
+  await page.locator('[data-model="octopus"]').click();
+  await page.waitForFunction(()=>window.biomech?.state.ready&&window.biomech.state.model==='octopus',null,{timeout:60000});
+  await expect(page.locator('.boot-loader')).toBeHidden();
   assert.deepEqual(errors, []);
-  assert.deepEqual(requestedModels, ['telson-sc8.glb', 'mellis-hb7.glb']);
-  console.log('PASS: one full-screen loader through boot/download/parse/render, real 25% → 75% progress, desktop/mobile viewport tabs, and both specimens under /mechanical3d/.');
+  assert.deepEqual(requestedModels, ['telson-sc8.glb', 'mellis-hb7.glb','pelagos-oc8.glb']);
+  console.log('PASS: one full-screen loader through boot/download/parse/render, real 25% → 75% progress, desktop/mobile viewport tabs, and three specimens under /mechanical3d/.');
 } finally {
   releaseDownload();
   releaseMoreModel();

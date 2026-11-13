@@ -4,6 +4,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { specimens } from './kinematics.js';
 import { ScorpionRig } from './scorpion-rig.js';
+import { OctopusRig } from './octopus-rig.js';
+import { BeeRig } from './bee-rig.js';
 import { RenderBatches } from './render-batches.js';
 
 const TAU = Math.PI * 2;
@@ -175,7 +177,7 @@ export class SpecimenStage {
           meshes.push(o);
         }
       });
-      const rig=nodes.has('SC_chassis')?new ScorpionRig(nodes):null;
+      const rig=nodes.has('SC_chassis')?new ScorpionRig(nodes):nodes.has('OC_body')?new OctopusRig(nodes):nodes.has('HB_chassis')?new BeeRig(nodes):null;
       const movingNodes=[...nodes.values()].filter(node=>node!==root&&(!node.isMesh||node.userData.explodeVector||(!rig&&node.name.endsWith('__01'))));
       const movingSet=new Set(movingNodes);
       for(const mesh of meshes) {
@@ -212,7 +214,7 @@ export class SpecimenStage {
   makeLabels() {
     this.labels.forEach(l=>l.el.remove());
     const sc=this.model==='scorpion';
-    const specs=sc ? [ ['SC_head','OPTIC ARRAY','复眼传感器',1,-55], ['SC_claw_L','CHELA ASSEMBLY','钳爪执行器',-1,24], ['SC_tail_joint_3','CAUDAL SERVO','尾部伺服关节',1,0] ] : [ ['HB_head','OPTIC MODULE','光学感知模块',-1,25], ['HB_wing_R0','WING TRANSMISSION','扑翼传动机构',1,-60], ['HB_abdomen','ABDOMEN CAPSULE','分段腹部舱体',1,25] ];
+    const specs=this.model==='octopus' ? [['OC_optic_R','OPTIC ARRAY','密封光学舱',1,-35],['OC_core','PRESSURE CORE','多级泵与行星传动',-1,-65],['OC_arm_1_joint_6','TENDON DRIVE','串联腕足关节',1,30]] : sc ? [ ['SC_head','OPTIC ARRAY','复眼传感器',1,-55], ['SC_claw_L','CHELA ASSEMBLY','钳爪执行器',-1,24], ['SC_tail_joint_3','CAUDAL SERVO','尾部伺服关节',1,0] ] : [ ['HB_head','OPTIC MODULE','光学感知模块',-1,25], ['HB_wing_R0','WING TRANSMISSION','扑翼传动机构',1,-60], ['HB_abdomen','ABDOMEN CAPSULE','分段腹部舱体',1,25] ];
     this.labels=specs.map(([name,title,subtitle,side,offsetY])=>{
       const anchor=this.current.nodes.get(name);
       const el=document.createElement('div');
@@ -249,18 +251,26 @@ export class SpecimenStage {
   }
   view(name, instant=false) {
     this.cameraGoal=new THREE.Vector3(...cameraViews[name]);
-    this.controls.target.set(0,this.model==='bee'?1.4:1.7,.35);
+    if(this.model==='octopus')this.cameraGoal.multiplyScalar(1.20);
+    this.controls.target.set(0,this.model==='octopus'?2.05:this.model==='bee'?1.4:1.7,.35);
     if(this.container.clientWidth<650) this.cameraGoal.multiplyScalar(1.45);
     if(instant) { this.camera.position.copy(this.cameraGoal); this.cameraGoal=null; this.controls.update(); }
   }
   resize() {
     const {width,height}=this.container.getBoundingClientRect();
     if(!width||!height) return;
+    const changedLayout=this.width!==undefined&&(this.width<650)!==(width<650);
     this.renderer.setSize(width,height);
     this.width=width;this.height=height;
     this.camera.aspect=width/height;
     this.camera.fov=width<650?42:36;
     this.camera.updateProjectionMatrix();
+    if(changedLayout&&this.current) {
+      const factor=width<650?1.45:1/1.45;
+      this.camera.position.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);
+      if(this.cameraGoal)this.cameraGoal.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);
+      this.controls.update();
+    }
   }
 
   frame(pose, delta, time, tour, playing = true) {
@@ -323,13 +333,13 @@ export class SpecimenStage {
       label.el.style.opacity=pos.z>1||x<120||x>w-120||y<70||y>h-120?'0':'1';
     }
   }
-  belongsTo(node,part) { while(node) { if(node.userData.assembly===part) return true; node=node.parent; } return false; }
+  belongsTo(node,part) { while(node) { if(node.userData.assembly===part||(this.model==='octopus'&&part==='arms'&&node.userData.assembly==='arm2')) return true; node=node.parent; } return false; }
   stats() {
     const articulated={};
-    for(const name of ['SC_jaw_L_a','SC_tail_joint_2','SC_leg_L0_femur','SC_leg_L0_tibia','SC_leg_L0_rod','HB_wing_L0','HB_abdomen_ring_5']) {
+    for(const name of ['SC_jaw_L_a','SC_tail_joint_2','SC_leg_L0_femur','SC_leg_L0_tibia','SC_leg_L0_rod','HB_wing_L0','HB_abdomen_ring_5','HB_tibia_L0','HB_drive_L','OC_arm_1_joint_6','OC_mantle_petal_0','OC_jet_impeller']) {
       const node=this.current?.nodes.get(name);
       if(node) articulated[name]={position:node.position.toArray(),quaternion:node.quaternion.toArray()};
     }
-    return {model:this.model,loaded:!!this.current,meshes:this.current?.meshes.length??0,triangles:this.renderer.info.render.triangles,calls:this.renderer.info.render.calls,selected:this.selected,articulated,feet:this.current?.rig?.diagnostics()};
+    return {model:this.model,loaded:!!this.current,meshes:this.current?.meshes.length??0,triangles:this.renderer.info.render.triangles,calls:this.renderer.info.render.calls,selected:this.selected,articulated,feet:this.current?.rig?.diagnostics?.()};
   }
 }

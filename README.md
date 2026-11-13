@@ -1,179 +1,201 @@
 # BIOMECH / 仿生机械实验室
 
-> 把一张机械生物动图，拆成可以观察、操作和重新组装的 3D 标本。
+**PELAGOS OC-8 · MELLIS HB-7 · TELSON SC-8**
 
-BIOMECH 是一个离线优先的交互式机械生物实验室：桌面端展示 Telson SC-8 仿生机械蝎子与 Mellis HB-7 仿生机械蜜蜂，用户可以旋转模型、隔离部件、展开装配层、切换动作和观察实时遥测。模型由 Blender 精细建模，网页端使用 Three.js 驱动同一套结构和运动数据。
+交互式三维标本 · Blender 可编辑结构 · 在线与离线双入口
 
-## 预览
+> 从外壳看到内部，从静态标本看到机构运动。
 
-### SC-8 / 精密装配视图
+BIOMECH 将三种机械生物参考动图转化为可以旋转、拆解、选取部件和操作的三维实验室。REV 03 新增机械章鱼，并重建蜜蜂、扩充蝎子的装甲结构。网页与仪表使用同一套姿态数据；模型保留完整几何，通过批量绘制减少浏览器的提交开销。
 
-<p align="center">
-  <img src="docs/screenshots/sc8-detail.png" alt="Telson SC-8 精密装配视图" width="100%" />
-</p>
+![Pelagos OC-8 八腕机械章鱼](docs/screenshots/oc8-overview.png)
 
-### 拆解与移动端
+## 三个标本，一套实验室
 
-<table>
-  <tr>
-    <td width="58%"><img src="docs/screenshots/sc8-exploded.png" alt="SC-8 爆炸视图" /></td>
-    <td width="42%"><img src="docs/screenshots/mobile.png" alt="移动端响应式界面" /></td>
-  </tr>
-</table>
+| 标本 | 结构细节 | 可操作机构 |
+| --- | --- | --- |
+| **OC-8 / Pelagos** | 8 条渐细腕足、96 个串联关节、吸盘阀体、密封圈、8 片外套膜、光学眼、多级泵组、喷口与喙部 | 悬停、游动、卷腕、开壳、喷射；独立观察 R2 腕足 |
+| **HB-7 / Mellis** | 4 片透明翼膜与翼脉、翼根轴承、胸腔空间桁架、减速齿轮、7 节腹环、回位弹簧、6 足关节、光学头 | 悬停、振翅、腹部伸展；翼根传动与足部收拢同步 |
+| **SC-8 / Telson** | 8 足独立关节、液压杆、双钳传动、中空分体陶瓷装甲、6 段尾部、动力舱和检修接口 | IK 步行与足端接地、双钳错峰开合、尾部错相摆动 |
 
-### 步态运动
+### OC-8 / 打开外套膜
 
-<p align="center">
-  <img src="docs/screenshots/sc8-gait.png" alt="SC-8 步态运动与实时控制面板" width="100%" />
-</p>
+外壳绕真实铰链向外展开，露出泵组、轴承、齿轮和内部支撑。腕足沿关节链连续卷曲，每段长度保持不变。
 
-## 体验重点
+![OC-8 外套膜展开与内部泵组](docs/screenshots/oc8-mantle.png)
 
-- **两个可切换标本**：Telson SC-8 八足机械蝎子、Mellis HB-7 扑翼仿生蜜蜂。
-- **精密部件层级**：装甲片、动力舱、齿轮、轴承、液压杆、线束、尾节和钳爪都可被隔离观察。
-- **和模型同步的动作**：腿部 IK 步态、足端接地、尾部错相、钳爪错峰开合、蜜蜂翅膀与腹节运动都由同一套姿态数据驱动。
-- **拆解式讲解**：部件选择、爆炸距离、线框、标签、四组相机视角、旋转台和 28 秒自动导览。
-- **实时遥测面板**：步态频率、尾部角度、执行器负载、钳爪开度、动作状态和时间轴同步变化。
-- **赛博中文界面**：Orbitron 拉丁字形配合 Noto Sans SC 中文字形，统一字重、字距和橙色信号色。
-- **在线与离线交付**：网页通过独立 GLB 请求显示真实下载进度；保留完整 `dist` 文件夹后，也能双击 `index.html` 离线打开。
-- **模型加载进度**：显示已下载 MB、百分比、下载/解析/渲染三个阶段；下载失败时提供重试。
-- **保留精度的渲染优化**：原始顶点和机械交互保持完整；支持 multi-draw 的浏览器中，SC-8 整机绘制调用从 982 次降至约 24 次。[测量、画面对比与复现方法](docs/performance.md)。
+<details>
+<summary>展开查看章鱼装配分解</summary>
 
-<p align="center">
-  <img src="docs/screenshots/loading.png" alt="统一的全屏 Loading：模型下载字节数、真实百分比和加载阶段" width="100%" />
-</p>
+![OC-8 拆解](docs/screenshots/oc8-exploded.png)
+
+</details>
+
+### HB-7 / 微型飞行机构
+
+![HB-7 透明翼脉与开放胸腔](docs/screenshots/hb7-overview.png)
+
+腹部展开会拉开环节并伸长回位弹簧，侧视可以观察导向轴、壳片与环形支撑之间的关系。
+
+![HB-7 腹部伸展侧视](docs/screenshots/hb7-abdomen.png)
+
+### SC-8 / 分段装甲与精密关节
+
+![SC-8 完整装甲](docs/screenshots/sc8-overview.png)
+
+<details>
+<summary>展开查看近景、拆解和步行</summary>
+
+![SC-8 细节](docs/screenshots/sc8-detail.png)
+![SC-8 拆解](docs/screenshots/sc8-exploded.png)
+![SC-8 步态](docs/screenshots/sc8-gait.png)
+
+</details>
+
+## 体验与画面
+
+- **完整交互**：拖动旋转、缩放、点击部件、部件隔离、装配分解、线框、标注、五个相机预设、旋转台和 28 秒导览。
+- **姿态驱动仪表**：压力、推力、翼角、钳爪开度与关节状态取自当前动画姿态。模式切换平滑过渡，支持暂停、变速与时间轴定位。
+- **保留高精度**：没有加入减面或低精度 LOD；透明翼膜、金属、陶瓷、抗锯齿与 2048² 阴影保留。批量绘制与原始可拾取场景图并存。
+- **清晰的中文控制台**：Noto Sans SC 搭配 Orbitron，三枚模型标签位于可视区右上角；手机端控制区纵向排布，长数字与标签不会挤出卡片。
+- **统一 Loading**：HTML 首屏直接显示静态 Loading，下载时展示真实字节进度，解析与准备渲染使用阶段提示，失败可重试。
+
+<details>
+<summary>查看手机端控制台</summary>
+
+<img src="docs/screenshots/mobile.png" alt="手机端三模型切换和完整控制台" width="390" />
+
+</details>
+
+### 当前模型规模
+
+| 标本 | Blender 可编辑对象¹ | 导出网格 | GLB 大小 | 整机绘制调用² |
+| --- | ---: | ---: | ---: | ---: |
+| OC-8 | 9,644 | 725 | 36.2 MiB | 18 |
+| HB-7 | 2,203 | 208 | 8.9 MiB | 22 |
+| SC-8 | 6,206 | 737 | 17.5 MiB | 26 |
+
+¹ 包含网格、曲线和关节空对象，不等于独立的工程零件数。导出仅按刚性父节点和材质合批，保留几何与法线；可编辑源文件不会被合批覆盖。
+
+² Windows / Chrome Headless / WebGL 2 / 1600×1100 / DPR 1，支持 `WEBGL_multi_draw`。部件隔离、线框与不支持此扩展的浏览器使用原始网格，调用数会增加。这是绘制统计，不是所有设备的帧率保证。[本版统计](docs/precision-revision.json) · [历史优化实验](docs/performance.md)
 
 ## 快速开始
 
 需要 Node.js 20.19+ 或 22.12+。
 
 ```powershell
-npm install --registry=https://registry.npmjs.org
+npm install
 npm run dev
 ```
 
-打开 <http://127.0.0.1:5173/> 即可进入实验室。
+访问 <http://127.0.0.1:5173/>。右上角 **TELSON / MELLIS / PELAGOS** 切换标本。
 
-## 构建与双击运行
+## 构建、部署与双击打开
 
 ```powershell
 npm run build
 ```
 
-构建脚本会先运行 Vite，再执行 `scripts/make-standalone.mjs`：
-
-1. 将样式和应用脚本内嵌到 `dist/index.html`，入口约 0.7 MiB，尽早显示首屏。
-2. 保留 `dist/assets/` 作为本地字体资源目录。
-3. 网页环境按需下载 `models/*.glb`，通过 Three.js FileLoader 报告实际接收字节数，再由 GLTFLoader 解析。
-4. 为每个模型生成 `models/*.glb.js` 本地数据文件，仅在 `file://` 环境读取，不依赖本地 HTTP 服务。
-
-构建完成后，直接双击：
+生成的 `dist/index.html` 内嵌应用代码和样式，入口约 0.7 MiB。模型与字体保留为外部文件：
 
 ```text
-dist/index.html
+dist/
+├─ index.html               双击入口 / 网站入口
+├─ assets/                  字体和构建资源
+└─ models/
+   ├─ manifest.json
+   ├─ telson-sc8.glb
+   ├─ mellis-hb7.glb
+   ├─ pelagos-oc8.glb
+   └─ *.glb.js              file:// 离线数据文件
 ```
 
-请将整个 `dist/` 文件夹一起移动或上传，保留 `assets/` 字体和 `models/` 模型资源。双击运行需要这些同目录文件。
+**部署时上传整个 `dist` 的内容；本地使用时保留完整文件夹，再双击 `index.html`。** 无需安装本地服务器，也不需要修改浏览器安全设置。在线请求按需加载 GLB，离线只读取对应模型的 `.glb.js`。
 
-可以用下面的检查命令验证双击版本：
+Loading 在 HTML 下载初期就可见；模型加载完成后才显示主界面。下载百分比来自真实接收字节，解析和 GPU 准备阶段不伪造百分比。
 
-```powershell
-npm run test:file
-```
-
-它会用 Chrome 通过真实 `file://` 地址打开 `dist/index.html`，确认模型就绪且没有页面错误或资源请求失败。
-
-首屏即显示全屏 Loading，模型下载进度、MB 读数与「下载模型 → 解析结构 → 准备渲染」都在同一页面呈现；全部就绪后才显示实验室主界面。切换标本时也沿用此加载页。应用脚本启动超过 30 秒时会显示等待说明及刷新入口。
-
-`npm run test:loading` 会先暂停 HTML 下载，确认首屏可见，再让模型下载分别停在 25% 和 75%，验证进度条及 MB 读数随实际字节数变化，最后验证两种标本均能加载。测试同时覆盖无 Content-Length 的进度计算、桌面与手机的全屏加载布局，以及模型可视区右上角的标本切换。
+![统一全屏 Loading](docs/screenshots/loading.png)
 
 ## 操作方式
 
-主界面直接展示模型可视区，右上角的 **TELSON / MELLIS** 标签用于切换机械标本。
-
 | 操作 | 作用 |
 | --- | --- |
-| 鼠标拖拽 / 触摸拖拽 | 旋转模型 |
+| 拖动 / 触摸拖动 | 旋转观察 |
 | 滚轮 / 双指缩放 | 调整距离 |
-| 点击模型部件 | 隔离对应装配 |
-| `Space` | 播放 / 暂停演示 |
-| `E` | 切换爆炸视图 |
+| 点击部件 / 部件按钮 | 隔离相应装配；「整机」恢复 |
+| `Space` | 播放 / 暂停 |
+| `E` | 拆解 / 重组 |
 | `L` | 显示 / 隐藏标注 |
-| `R` | 重置相机和模型 |
-| 视图按钮 | 切换透视、正面、侧面、俯视和特写 |
-| 时间轴 | 跳转到自动导览的任意阶段 |
+| `R` | 重置模型与相机 |
+| 视图按钮 | 透视、正视、侧视、俯视、特写 |
+| 时间轴 | 定位导览中的动作与拆解阶段 |
 
 ## Blender 工作流
 
-当前 Blender 源文件位于 [`blender/biomech-specimens.blend`](blender/biomech-specimens.blend)。
+源文件：[`blender/biomech-specimens.blend`](blender/biomech-specimens.blend)。三个根节点分别是 `Pelagos_OC8`、`Mellis_HB7`、`Telson_SC8`。壳片、线束、齿轮、轴承与关节保持可编辑状态，适合继续精修。
 
-- SC-8 REV 02 约 **5,144 个可编辑对象**，包含独立腿部关节、液压杆、齿轮、轴承、线束、装甲片和动力舱。
-- 蜜蜂模型包含独立翅膀、腹部环节、腿部连接和内部传动结构。
-- `blender/precision_scorpion.py` 负责高精度 SC-8 结构，`blender/export_models.py` 负责导出 GLB。
-- `blender/export.ps1` 可在 Windows 上调用 Blender 并重新导出网页模型。
+源文件保存时只显示最后处理的标本。可在 Blender Outliner 中选择另一个根节点及其子级并取消隐藏；网页动作由 JavaScript 关节驱动，源文件保存的是装配基准姿态。
 
-导出示例：
+| 脚本 | 用途 |
+| --- | --- |
+| `mechanical_parts.py` | 共享中空壳、齿轮、轴承、弹簧、线束和紧固件 |
+| `build_octopus.py` | 从参数生成 OC-8；尺寸由 `src/octopus-config.json` 共享 |
+| `refine_bee.py` | 重建 HB-7 翼脉、胸腔、腹部及关节 |
+| `precision_scorpion.py` | SC-8 REV 02 基础结构与 IK 关节 |
+| `refine_scorpion.py` | 在基础结构上增加 REV 03 可拆装甲与检修件，可重复执行 |
+| `export_models.py` | 评估修改器、保留法线、按刚性层级合批后导出 GLB |
+
+手动精修后，只需导出：
 
 ```powershell
 pwsh -NoProfile -File blender/export.ps1
+npm run build
 ```
 
-如果 Blender 不在默认路径：
+若 Blender 安装在其他位置：
 
 ```powershell
 pwsh -NoProfile -File blender/export.ps1 -Blender "D:\Blender\blender.exe" -BlendFile "D:\Models\refined.blend"
 ```
 
-导出后重新运行 `npm run build`，网页会读取最新 GLB 并重新生成可双击运行的完整产物。
+需要重新生成结构时，用 Blender 后台运行对应生成脚本，例如：
 
-## 项目结构
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --background blender/biomech-specimens.blend --python blender/build_octopus.py
+```
+
+生成脚本会更新对应标本并保存 `.blend`；**手工精修过的源文件应另存副本，再执行重建**。多个生成脚本按顺序运行，避免同时写入同一个源文件。
+
+## 代码与验证
 
 ```text
 src/
-├─ main.js              页面结构、交互、状态与遥测
-├─ stage.js             Three.js 场景、GLB 加载、材质、标注和相机
-├─ render-batches.js    保留原始几何与交互的批量绘制
-├─ kinematics.js        标本定义、动作状态、导览时间轴
-├─ scorpion-motion.js   SC-8 步态、尾节和钳爪运动学
-├─ scorpion-rig.js      SC-8 腿部关节与液压连杆姿态
-└─ style.css            实验室界面、赛博中文字体和响应式布局
-blender/
-├─ biomech-specimens.blend
-├─ precision_scorpion.py
-├─ export_models.py
-└─ export.ps1
-public/models/
-├─ telson-sc8.glb
-├─ mellis-hb7.glb
-└─ manifest.json
-scripts/
-├─ make-standalone.mjs  构建同时支持在线进度和本地双击的产物
-├─ test-loading.mjs     暂停 HTML 与 GLB 下载，验证首屏和真实进度
-├─ profile-render.mjs   固定场景采样、Git 对照版本和 GPU/CPU 计时
-├─ compare-render.mjs   原始精度、画质设置、绘制调用和逐像素画面对比
-└─ test-file.mjs        通过 file:// 验证构建产物
+├─ main.js                 交互状态、控制台、Loading 与遥测
+├─ stage.js                场景、模型加载、相机与拾取
+├─ render-batches.js       保留原始几何的批量绘制
+├─ kinematics.js           标本定义、动作与导览入口
+├─ octopus-motion.js       八腕波形、开壳和喷射姿态
+├─ octopus-rig.js          96 个腕关节与外套膜铰链
+├─ bee-rig.js              翼根、腿部与伸缩腹部
+├─ scorpion-motion.js      足端 IK、尾部与双钳
+└─ scorpion-rig.js          腿部关节和液压连杆
 ```
-
-## 验证
 
 ```powershell
-npm run build
 npm run test:math
 npm test
+npm run build
 npm run test:file
 npm run test:loading
+node scripts/review-specimens.mjs
 ```
 
-当前验证覆盖：
+验证覆盖三模型切换、96 个腕关节的杆长约束、开壳和卷腕、喷射读数、蜜蜂翼角与腹节、SC-8 接地与 IK、部件拾取、线框、拆解与重组、缺失模型重试、手机布局和无 multi-draw 扩展的兼容路径。构建测试通过真实 `file://` 及 `/mechanical3d/` 子路径验证，并暂停 HTML / GLB 下载检查首屏与 25% → 75% 的实际进度。
 
-- SC-8 和 HB-7 模型加载与切换。
-- 腿部关节独立运动、足端接地和杆长约束。
-- 尾节错相、钳爪动作、蜜蜂翅膀和腹部动作。
-- 爆炸、隔离、重组、标签、线框、时间轴和键盘快捷键。
-- 390px 移动端无横向溢出。
-- 批量绘制下的直接点击拾取、线框往返，以及无 multi-draw 扩展的兼容路径。
-- `file://` 双击入口无页面错误、无资源请求失败，模型状态正常就绪。
+视觉复核脚本在 `review/specimens/` 输出总览、机构、拆解、近景、运动及手机截图和渲染统计。
 
-## 参考
+## 参考与范围
 
-交互拆解方式参考 [elvarofficial/teardown](https://github.com/elvarofficial/teardown)。本项目的机械结构、Blender 模型、运动学和界面代码均为本项目独立实现。
+外观与拆解方式参考用户提供的 `octopus.gif`、`bee.gif`、`scorpion.gif` 及 [elvarofficial/teardown](https://github.com/elvarofficial/teardown)。本站模型和代码独立实现。
+
+这是可操作的概念机械模型，不是对参考图的逐像素复制，也不是经过工程标定的制造图纸。压力、推力、功率与负载为姿态驱动的演示值，不代表实测数据。

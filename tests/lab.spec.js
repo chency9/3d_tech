@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { LabPage } from './lab.page.js';
 
-test('both detailed models load without runtime errors; changing specimens preserves controls',async({page})=>{
+test('three detailed models load without runtime errors; changing specimens preserves controls',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const lab=new LabPage(page);await lab.open();
   await expect(page.getByRole('heading',{level:1})).toContainText('Telson SC-8');
@@ -9,6 +9,9 @@ test('both detailed models load without runtime errors; changing specimens prese
   await lab.specimen('bee');
   await expect(page.getByRole('heading',{level:1})).toContainText('Mellis HB-7');
   expect((await lab.snapshot()).stats.meshes).toBeGreaterThan(60);
+  await lab.specimen('octopus');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Pelagos OC-8');
+  expect((await lab.snapshot()).stats.meshes).toBeGreaterThan(700);
   await lab.specimen('scorpion');
   await expect(page.getByRole('button',{name:'八足 LEGS'})).toBeVisible();
   expect(errors).toEqual([]);
@@ -74,11 +77,58 @@ test('bee wing and abdomen pivots animate; play/pause and keyboard shortcuts wor
   await expect.poll(async()=>(await lab.snapshot()).pose.abdomenOpen).toBeGreaterThan(.1);
   await page.getByRole('button',{name:'暂停演示',exact:true}).click();
   const t=(await lab.snapshot()).state.simulationTime;
+  const abdominal=await lab.snapshot();
+  expect(abdominal.stats.articulated.HB_abdomen_ring_5.position[2]).toBeCloseTo(-1.23-abdominal.pose.abdomenOpen,3);
   await page.keyboard.press('l');
   await expect(page.getByRole('button',{name:'标注 LABELS',exact:true})).toHaveAttribute('aria-pressed','false');
   expect((await lab.snapshot()).state.simulationTime).toBe(t);
   await page.keyboard.press('e');
   await expect.poll(async()=>(await lab.snapshot()).state.explode).toBeGreaterThan(.9);
+});
+
+test('octopus opens its mantle, curls all eight rigid arm chains and synchronizes jet instruments',async({page})=>{
+  const lab=new LabPage(page);await lab.open();await lab.specimen('octopus');
+  const rest=await lab.snapshot();
+  await page.getByRole('button',{name:'开壳',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).pose.mantleOpen).toBeGreaterThan(.9);
+  expect((await lab.snapshot()).stats.articulated.OC_mantle_petal_0.quaternion).not.toEqual(rest.stats.articulated.OC_mantle_petal_0.quaternion);
+  await page.getByRole('button',{name:'卷腕',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).pose.arms[1].curl).toBeGreaterThan(rest.pose.arms[1].curl+.8);
+  await page.getByRole('button',{name:'暂停演示',exact:true}).click();
+  const curled=await lab.snapshot();
+  for(const arm of curled.stats.feet) {
+    expect(arm.tip.every(Number.isFinite)).toBe(true);
+    const lengths=[.53,.48,.44,.40,.36,.33,.30,.27,.24,.21,.18,.16];
+    arm.lengths.forEach((length,j)=>expect(length).toBeCloseTo(lengths[j],4));
+  }
+  await page.getByRole('button',{name:'喷射',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).pose.thrust).toBeGreaterThan(14);
+  await page.getByRole('button',{name:'暂停演示',exact:true}).click();
+  await expect.poll(async()=>Math.abs(Number(await page.locator('#frequency').textContent())-(await lab.snapshot()).pose.pressure)).toBeLessThan(.11);
+  await page.getByRole('button',{name:'腕足 R2 ARM R2',exact:true}).click();
+  expect((await lab.snapshot()).stats.selected).toBe('arm2');
+  await page.getByRole('button',{name:'整机 ALL',exact:true}).click();
+  await page.getByRole('button',{name:'拆解 EXPLODE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).state.explode).toBeGreaterThan(.95);
+  await page.getByRole('button',{name:'拆解 EXPLODE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).state.explode).toBeLessThan(.05);
+  await page.getByRole('button',{name:'线框 WIRE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).stats.triangles).toBe(2);
+  await page.getByRole('button',{name:'线框 WIRE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).stats.triangles).toBeGreaterThan(2000000);
+  await lab.pickCenter();
+  await expect.poll(async()=>(await lab.snapshot()).state.part).not.toBe('all');
+});
+
+test('octopus mobile controls and all three viewport tabs stay within the page',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  const lab=new LabPage(page);await lab.open();await lab.specimen('octopus');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
+  for(const button of await page.locator('[data-model]').all()) {
+    const bounds=await button.boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(390);
+  }
+  await page.getByRole('button',{name:'喷射',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).pose.thrust).toBeGreaterThan(14);
 });
 
 test('mobile page has no horizontal overflow and the controls remain usable',async({page})=>{
@@ -129,6 +179,6 @@ test('a browser without WEBGL_multi_draw keeps every model and control available
   await expect.poll(async()=>(await lab.snapshot()).stats.calls).toBeGreaterThan(800);
   await page.getByRole('button',{name:'拆解 EXPLODE',exact:true}).click();
   await expect.poll(async()=>(await lab.snapshot()).state.explode).toBeGreaterThan(.95);
-  await lab.specimen('bee');await lab.specimen('scorpion');
+  await lab.specimen('bee');await lab.specimen('octopus');await lab.specimen('scorpion');
   expect(errors).toEqual([]);
 });

@@ -2,17 +2,25 @@
   {
     "file": "telson-sc8.glb",
     "specimen": "Telson SC-8",
-    "editable_objects": 5144,
-    "draw_batches": 489,
-    "vertices": 261254,
-    "bytes": 16578916
+    "editable_objects": 6206,
+    "draw_batches": 737,
+    "vertices": 327038,
+    "bytes": 18334124
   },
   {
     "file": "mellis-hb7.glb",
     "specimen": "Mellis HB-7",
-    "editable_objects": 641,
-    "draw_batches": 86,
-    "vertices": 48192,
-    "bytes": 2547764
+    "editable_objects": 2203,
+    "draw_batches": 208,
+    "vertices": 173270,
+    "bytes": 9315128
+  },
+  {
+    "file": "pelagos-oc8.glb",
+    "specimen": "Pelagos OC-8",
+    "editable_objects": 9644,
+    "draw_batches": 725,
+    "vertices": 693264,
+    "bytes": 37979688
   }
 ]

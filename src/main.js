@@ -18,6 +18,7 @@ document.querySelector('#app').innerHTML = `
   <nav class="specimen-switch viewport-switch" aria-label="选择机械模型">
     <button data-model="scorpion" aria-pressed="true"><span class="specimen-number">01</span><strong>TELSON</strong><span>SC-8</span></button>
     <button data-model="bee" aria-pressed="false"><span class="specimen-number">02</span><strong>MELLIS</strong><span>HB-7</span></button>
+    <button data-model="octopus" aria-pressed="false"><span class="specimen-number">03</span><strong>PELAGOS</strong><span>OC-8</span></button>
   </nav>
   <div id="stage" class="stage"></div>
   <section class="specimen-heading" aria-label="模型信息">
@@ -27,7 +28,7 @@ document.querySelector('#app').innerHTML = `
   </section>
   <div class="specimen-meta"><span>SPECIMEN ID<b id="serial">SC8–0730</b></span><span>OPERATOR<b>RESEARCH / YOU</b></span><button id="help" aria-label="操作说明">?</button></div>
   <aside class="panel-column left-panels" aria-label="实时仿真仪表">
-    <section class="instrument frequency-panel"><div class="panel-heading"><h2 id="frequency-heading">步态频率 <span>/ GAIT</span></h2><span>01</span></div><div class="reading"><strong id="frequency">0.0</strong><span>Hz</span><em id="frequency-mode">STANDBY</em></div><div class="micro-label" id="frequency-label">STRIDE FREQUENCY</div>${waveSVG}<div class="chart-caption"><span>相位同步</span><span id="phase">φ 000°</span></div></section>
+    <section class="instrument frequency-panel"><div class="panel-heading"><h2 id="frequency-heading">步态频率 <span>/ GAIT</span></h2><span>01</span></div><div class="reading"><strong id="frequency">0.0</strong><span id="frequency-unit">Hz</span><em id="frequency-mode">STANDBY</em></div><div class="micro-label" id="frequency-label">STRIDE FREQUENCY</div>${waveSVG}<div class="chart-caption"><span>相位同步</span><span id="phase">φ 000°</span></div></section>
     <section class="instrument"><div class="panel-heading"><h2 id="secondary-heading">尾部角度 <span>/ TAIL</span></h2><span>02</span></div><div class="gauge-layout"><div><div class="reading"><strong id="secondary">140</strong><span id="secondary-unit">°</span></div><div class="micro-label" id="secondary-label">STRIKE ANGLE</div></div><svg viewBox="0 0 90 65" class="dial" aria-hidden="true"><path d="M12 56A33 33 0 1 1 78 56" class="dial-track"/><path d="M12 56A33 33 0 1 1 78 56" class="dial-accent"/><g id="needle"><path d="M45 43L67 22"/><circle cx="45" cy="43" r="3"/></g><text x="8" y="64">0</text><text x="66" y="64">180</text></svg></div><div class="mini-data"><span id="secondary-info-label">姿态状态</span><b id="secondary-info">LOCKED</b></div></section>
     <section class="instrument servo-panel"><div class="panel-heading"><h2>关节伺服 <span>/ SERVOS</span></h2><span>03</span></div><div class="servo-caption"><span>ACTUATOR</span><span>LOAD / %</span></div><div id="servo-bars"></div><div class="panel-foot"><span class="status-dot"></span><span id="servo-status">8 个执行器就绪</span></div></section>
     <div class="simulation-note"><span>◇</span> 概念机械 · 演示仿真<small>POSE-DRIVEN TELEMETRY</small></div>
@@ -50,9 +51,9 @@ const $=id=>document.getElementById(id);
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const state={model:'scorpion',mode:'stand',part:'all',time:0,simulationTime:0,playing:!reduced,tour:!reduced,speed:1,explode:0,targetExplode:0,ready:false,lastInput:performance.now(),labels:true,wireframe:false,turntable:false};
 let stage, loadAttempt=0, last=performance.now(), lastHUD=0, frames=0, fps=0, fpsAt=last;
-const motionWeights={walk:0,claw:0,tail:0};
+const motionWeights={walk:0,claw:0,tail:0,swim:0,coil:0,mantle:0,jet:0,hover:0,flight:0,abdomen:0};
 const currentPose=()=>solve(state.model,state.mode,state.simulationTime,state.speed,state.explode,motionWeights);
-const modeLabels={stand:['STANDING','待机姿态 · 全部机构就绪'],walk:['WALKING','交替步态 · 足端接地 / 关节联动'],claw:['CLAW OPEN','双钳开合 · 抓握机构演示'],tail:['TAIL ACTIVE','尾部运动 · 关节链协同'],hover:['HOVER','悬停姿态 · 扑翼机构运行'],flight:['WING BEAT','振翅演示 · 翼根关节驱动'],abdomen:['ABDOMEN OPEN','腹部展开 · 检查分段结构']};
+const modeLabels={stand:['STANDING','待机姿态 · 全部机构就绪'],walk:['WALKING','交替步态 · 足端接地 / 关节联动'],claw:['CLAW OPEN','双钳开合 · 抓握机构演示'],tail:['TAIL ACTIVE','尾部运动 · 关节链协同'],hover:['HOVER','悬停姿态 · 扑翼机构运行'],flight:['WING BEAT','振翅演示 · 翼根关节驱动'],abdomen:['ABDOMEN OPEN','腹部展开 · 检查分段结构'],swim:['CRUISING','八腕协同 · 水下巡航'],coil:['ARM COILING','串联驱动 · 腕端卷曲'],mantle:['MANTLE OPEN','外套膜展开 · 泵组与传动可见'],jet:['JET PROPULSION','压力脉冲 · 喷流推进']};
 const touch=()=>{state.lastInput=performance.now();};
 function manual() { touch(); state.tour=false; $('tour').setAttribute('aria-pressed','false'); }
 function press(id,on){$(id).setAttribute('aria-pressed',String(on));}
@@ -77,26 +78,29 @@ function setExplode(value) {
 }
 
 function renderControls() {
-  const cfg=specimens[state.model], bee=state.model==='bee';
+  const cfg=specimens[state.model], bee=state.model==='bee', oct=state.model==='octopus';
   $('parts').dataset.specimen=state.model;
+  $('modes').dataset.specimen=state.model;
   $('parts').innerHTML=cfg.parts.map(([key,label,en])=>`<button data-part="${key}" aria-pressed="${key==='all'}">${label}<small>${en}</small></button>`).join('');
   $('modes').innerHTML=cfg.modes.map(([key,label])=>`<button data-mode="${key}" aria-pressed="${key===state.mode}">${label}</button>`).join('');
-  $('servo-bars').innerHTML=Array.from({length:cfg.legs},(_,i)=>`<div class="servo-row"><span>${i<cfg.legs/2?'L':'R'}${i%(cfg.legs/2)+1}</span><div class="servo-track"><i id="servo-${i}"></i></div><span id="load-${i}">32%</span></div>`).join('');
+  $('servo-bars').innerHTML=Array.from({length:cfg.legs},(_,i)=>`<div class="servo-row"><span>${oct?(i<4?'R':'L'):(i<cfg.legs/2?'L':'R')}${i%(cfg.legs/2)+1}</span><div class="servo-track"><i id="servo-${i}"></i></div><span id="load-${i}">32%</span></div>`).join('');
   $('servo-status').textContent=`${cfg.legs} 个执行器就绪`;
   $('model-name').textContent=cfg.name;
   $('model-code').textContent=cfg.code;
   $('model-title').textContent=cfg.title;
-  $('model-subtitle').textContent=bee?'FLAPPING-WING DRONE':'OCTOPOD WALKER';
-  $('specimen-index').textContent=bee?'002':'001';
+  $('model-subtitle').textContent=oct?'SOFT-ARM MANIPULATOR':bee?'FLAPPING-WING DRONE':'OCTOPOD WALKER';
+  $('specimen-index').textContent=oct?'003':bee?'002':'001';
   $('serial').textContent=cfg.id;
-  $('frequency-heading').innerHTML=bee?'振翅频率 <span>/ WING BEAT</span>':'步态频率 <span>/ GAIT</span>';
-  $('frequency-label').textContent=bee?'WING FREQUENCY':'STRIDE FREQUENCY';
-  $('secondary-heading').innerHTML=bee?'扑翼幅度 <span>/ AMPLITUDE</span>':'尾部角度 <span>/ TAIL</span>';
-  $('secondary-label').textContent=bee?'WING DEFLECTION':'STRIKE ANGLE';
-  $('output-heading').innerHTML=bee?'运行功率 <span>/ POWER</span>':'钳爪握力 <span>/ GRIP</span>';
+  $('frequency-unit').textContent=oct?'kPa':'Hz';
+  $('secondary-unit').textContent=oct?'m':'°';
+  $('frequency-heading').innerHTML=oct?'喷流压力 <span>/ JET</span>':bee?'振翅频率 <span>/ WING BEAT</span>':'步态频率 <span>/ GAIT</span>';
+  $('frequency-label').textContent=oct?'MANTLE PRESSURE':bee?'WING FREQUENCY':'STRIDE FREQUENCY';
+  $('secondary-heading').innerHTML=oct?'潜航深度 <span>/ DEPTH</span>':bee?'扑翼幅度 <span>/ AMPLITUDE</span>':'尾部角度 <span>/ TAIL</span>';
+  $('secondary-label').textContent=oct?'OPERATING DEPTH':bee?'WING DEFLECTION':'STRIKE ANGLE';
+  $('output-heading').innerHTML=oct?'喷流推力 <span>/ THRUST</span>':bee?'运行功率 <span>/ POWER</span>':'钳爪握力 <span>/ GRIP</span>';
   $('output-unit').textContent=bee?'W':'N';
-  $('output-caption').textContent=bee?'WING / DEFLECTION':'CHELA / OPENING';
-  $('anatomy').innerHTML=bee?'6 LEGS <i>·</i> 4 WINGS <i>·</i> 2 OPTICS':'8 LEGS <i>·</i> 2 CLAWS <i>·</i> 6 TAIL LINKS';
+  $('output-caption').textContent=oct?'MANTLE / APERTURE':bee?'WING / DEFLECTION':'CHELA / OPENING';
+  $('anatomy').innerHTML=oct?'8 ARMS <i>·</i> 96 JOINTS <i>·</i> 8 MANTLE PETALS':bee?'6 LEGS <i>·</i> 4 WINGS <i>·</i> 1 OPTIC':'8 LEGS <i>·</i> 2 CLAWS <i>·</i> 6 TAIL LINKS';
   document.querySelectorAll('[data-model]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.model===state.model)));
   document.querySelectorAll('[data-part]').forEach(b=>b.onclick=()=>setPart(b.dataset.part));
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
@@ -203,25 +207,26 @@ window.addEventListener('keydown',e=>{
 document.addEventListener('visibilitychange',()=>{last=performance.now();});
 
 function updateHUD(pose) {
-  const bee=state.model==='bee';
+  const bee=state.model==='bee',oct=state.model==='octopus';
   $('frequency').textContent=pose.displayFrequency.toFixed(1);
   $('frequency-mode').textContent=pose.frequency>.01?'ACTIVE':'STANDBY';
   $('phase').textContent=`φ ${String(Math.floor(state.simulationTime*360%360)).padStart(3,'0')}°`;
-  $('secondary').textContent=bee?`${Math.abs(pose.wingAngle*180/Math.PI).toFixed(0)}`:pose.tailAngle.toFixed(0);
-  $('secondary-info').textContent=bee?(pose.flying?'FLAPPING':'FOLDED'):Math.abs(pose.tailFlex)>.001?'ACTIVE':'LOCKED';
-  $('needle').style.transform=`rotate(${bee?Math.abs(pose.wingAngle)*90-60:pose.tailAngle-140}deg)`;
-  $('output').textContent=bee?pose.power.toFixed(1):pose.grip.toFixed(0);
-  $('opening').textContent=bee?`${(pose.wingAngle*180/Math.PI).toFixed(0)}°`:`${(pose.clawOpen*100).toFixed(0)}%`;
-  $('output-bar').style.width=`${bee?pose.power/30*100:pose.grip/76*100}%`;
+  $('secondary').textContent=oct?pose.depth.toFixed(1):bee?`${Math.abs(pose.wingAngle*180/Math.PI).toFixed(0)}`:pose.tailAngle.toFixed(0);
+  $('secondary-info').textContent=oct?(pose.mantleOpen>.1?'MANTLE OPEN':'HOLDING'):bee?(pose.flying?'FLAPPING':'FOLDED'):Math.abs(pose.tailFlex)>.001?'ACTIVE':'LOCKED';
+  $('needle').style.transform=`rotate(${oct?pose.depth*3-40:bee?Math.abs(pose.wingAngle)*90-60:pose.tailAngle-140}deg)`;
+  $('output').textContent=oct?pose.thrust.toFixed(1):bee?pose.power.toFixed(1):pose.grip.toFixed(0);
+  $('opening').textContent=oct?`${Math.round(pose.mantleOpen*100)}%`:bee?`${(pose.wingAngle*180/Math.PI).toFixed(0)}°`:`${(pose.clawOpen*100).toFixed(0)}%`;
+  $('output-bar').style.width=`${oct?pose.thrust/22*100:bee?pose.power/30*100:pose.grip/76*100}%`;
   pose.legs.forEach((leg,i)=>{$(`servo-${i}`).style.width=`${leg.load}%`;$(`servo-${i}`).classList.toggle('active',!leg.contact);$(`load-${i}`).textContent=`${leg.load}%`;});
-  if(!bee)$('servo-status').textContent=`${pose.supportCount} 足支撑 · ${8-pose.supportCount} 足摆动`;
+  if(oct)$('servo-status').textContent='8 条腕足 · 96 级独立关节';
+  else if(!bee)$('servo-status').textContent=`${pose.supportCount} 足支撑 · ${8-pose.supportCount} 足摆动`;
   const wave=Array.from({length:80},(_,i)=>{
     const t=state.simulationTime-(79-i)/35;
     const value=waveSignal(state.model,state.mode,t,state.explode,motionWeights);
     return `${i?'L':'M'}${(i/79*200).toFixed(1)} ${(23-value*16).toFixed(1)}`;
   }).join(' ');
   $('wave').setAttribute('d',wave);
-  const [label,description]=state.explode>.1?['TEARDOWN','结构拆解 · 各机构沿装配方向分离']:modeLabels[state.mode];
+  const [label,description]=state.explode>.1?['TEARDOWN','结构拆解 · 各机构沿装配方向分离']:oct&&state.mode==='stand'?['HOLDING','定点悬停 · 腕端微调']:modeLabels[state.mode];
   $('operating-mode').textContent=label;
   $('operating-description').textContent=description;
   $('current-time').textContent=`00:${Math.floor(state.time).toString().padStart(2,'0')}`;

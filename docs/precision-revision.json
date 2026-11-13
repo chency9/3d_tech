@@ -1,0 +1,25 @@
+{
+  "environment": "Windows / Chrome Headless / WebGL 2 / 1600×1100 / DPR 1 / WEBGL_multi_draw",
+  "measurement": "renderer.info.render; triangles include shadow passes; no geometry simplification",
+  "specimens": [
+    {
+      "model": "octopus",
+      "meshes": 725,
+      "triangles": 2720282,
+      "drawCalls": 18
+    },
+    {
+      "model": "bee",
+      "meshes": 208,
+      "triangles": 670194,
+      "drawCalls": 22
+    },
+    {
+      "model": "scorpion",
+      "meshes": 737,
+      "triangles": 1269810,
+      "drawCalls": 26
+    }
+  ],
+  "runtimeErrors": []
+}
