@@ -16,6 +16,8 @@
       .boot-loader small{color:#969287;font:11px/1.5 "Courier New",monospace;letter-spacing:.12em}
       .boot-loader__track{width:min(320px,70vw);height:3px;background:#ded7ca;overflow:hidden}
       .boot-loader__track i{display:block;width:42%;height:100%;background:#ed572f;animation:boot-scan 1.35s ease-in-out infinite}
+      .boot-loader button{justify-self:start;padding:10px 20px;border:1px solid #ed572f;background:transparent;color:#b43c1b;font:inherit;cursor:pointer}
+      .boot-loader button[hidden]{display:none}
       @keyframes boot-scan{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
       @media(prefers-reduced-motion:reduce){.boot-loader__track i{animation:none;transform:none}}
     </style>
@@ -27,8 +29,32 @@
         <b>正在启动机械实验室</b>
         <span class="boot-loader__track" aria-hidden="true"><i></i></span>
         <small>INITIALIZING WEBGL · LOADING SPECIMENS</small>
+        <button type="button" hidden>刷新重试</button>
       </div>
     </div>
+    <script>
+      (function () {
+        var loader = document.querySelector('.boot-loader');
+        var retry = loader.querySelector('button');
+        retry.addEventListener('click', function () { location.reload(); });
+        function message(title, detail) {
+          if (!loader.isConnected) return;
+          loader.querySelector('b').textContent = title;
+          loader.querySelector('small').textContent = detail;
+          retry.hidden = false;
+        }
+        window.addEventListener('error', function () {
+          message('实验室启动失败', '请检查网络连接，点击刷新重试');
+        }, true);
+        window.addEventListener('unhandledrejection', function () {
+          message('实验室启动失败', '请检查网络连接，点击刷新重试');
+        });
+        setTimeout(function () {
+          if (!retry.hidden) return;
+          message('正在下载机械标本，耗时较长', '首次打开需要更多时间，请继续等待或刷新重试');
+        }, 30000);
+      }());
+    </script>
     <noscript>需要启用 JavaScript 才能运行 BIOMECH 仿生机械实验室。</noscript>
     <script type="module" src="/src/main.js"></script>
   </body>

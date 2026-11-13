@@ -36,7 +36,14 @@ const safeJs = js.replaceAll('</script', '<\\/script');
 const inlineModule = `<script type="module" data-standalone-bundle>\n${safeJs}\n</script>`;
 // Use replacement callbacks: minified vendor code contains `$&` sequences,
 // which String#replace would otherwise expand into the matched tag.
-const standalone = html.replace(cssMatch[0], () => inlineStyle).replace(jsMatch[0], () => `${modelScript}${inlineModule}`);
+// Vite puts the entry script in <head>. Embedding the 25 MiB model payload
+// there would keep the HTML parser from reaching the startup screen until
+// almost the entire document had downloaded. Keep the loader first in <body>
+// and append the heavy payload after it so streaming responses can paint it.
+const standalone = html
+  .replace(cssMatch[0], () => inlineStyle)
+  .replace(jsMatch[0], '')
+  .replace('</body>', () => `${modelScript}${inlineModule}\n</body>`);
 await writeFile(htmlPath, standalone, 'utf8');
 
 const megabytes = (Buffer.byteLength(standalone) / 1024 / 1024).toFixed(1);

@@ -76,6 +76,8 @@ npm run test:file
 
 它会用 Chrome 通过真实 `file://` 地址打开 `dist/index.html`，确认模型就绪且没有页面错误或资源请求失败。
 
+首屏 Loading 位于内嵌模型数据之前，下载大模型时即可显示。`npm run test:loading` 会暂停 HTML 下载，只发送前 64 KB，确认 Loading 可见后才继续下载，并验证两种标本均能加载。启动超过 30 秒时会显示等待说明及刷新入口。
+
 ## 操作方式
 
 | 操作 | 作用 |
