@@ -1,0 +1,18 @@
+[
+  {
+    "file": "telson-sc8.glb",
+    "specimen": "Telson SC-8",
+    "editable_objects": 5144,
+    "draw_batches": 489,
+    "vertices": 261254,
+    "bytes": 16578916
+  },
+  {
+    "file": "mellis-hb7.glb",
+    "specimen": "Mellis HB-7",
+    "editable_objects": 641,
+    "draw_batches": 86,
+    "vertices": 48192,
+    "bytes": 2547764
+  }
+]

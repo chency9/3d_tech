@@ -1,0 +1,15 @@
+import { chromium } from '@playwright/test';
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:900}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const failed=[];page.on('requestfailed',r=>failed.push(r.url()));
+await page.goto('http://127.0.0.1:4173/');
+await page.waitForFunction(()=>window.biomech?.state.ready);
+await page.waitForFunction(()=>window.biomech.state.time>1);
+console.log('production_scorpion',await page.evaluate(()=>({model:window.biomech.state.model,ready:window.biomech.state.ready,playing:window.biomech.state.playing,meshes:window.biomech.stats.meshes})));
+await page.getByRole('button',{name:/MELLIS/}).click();
+await page.waitForFunction(()=>window.biomech.state.ready&&window.biomech.state.model==='bee');
+await page.waitForFunction(()=>window.biomech.state.time>24,{timeout:45000});
+console.log('production_bee_full_tour',await page.evaluate(()=>({model:window.biomech.state.model,ready:window.biomech.state.ready,mode:window.biomech.state.mode,time:window.biomech.state.time,meshes:window.biomech.stats.meshes})));
+console.log(JSON.stringify({errors,failed}));
+await browser.close();

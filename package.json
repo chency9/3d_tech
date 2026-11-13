@@ -1,0 +1,25 @@
+{
+  "name": "biomech-field-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build && node scripts/make-standalone.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "playwright test",
+    "test:file": "node scripts/test-file.mjs",
+    "test:math": "node --test tests/kinematics.test.js tests/scorpion-motion.test.js"
+  },
+  "dependencies": {
+    "@fontsource/barlow-condensed": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/noto-sans-sc": "^5.3.1",
+    "@fontsource/orbitron": "^5.3.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "vite": "^7.2.2"
+  }
+}
