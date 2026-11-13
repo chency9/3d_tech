@@ -12,19 +12,14 @@ import './style.css';
 import { specimens, DURATION, solve, tourAt, clamp } from './kinematics.js';
 import { SpecimenStage } from './stage.js';
 
-const icon = `<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><ellipse cx="24" cy="24" rx="6" ry="11"/><path d="m18 19-8-7m8 12-10 1m10 4-8 8m20-18 8-7m-8 12 10 1m-10 4 8 8M21 13l-4-6m10 6 4-6M24 35v7"/><circle cx="24" cy="22" r="2"/></svg>`;
 const waveSVG = '<svg class="wave-chart" viewBox="0 0 200 46" preserveAspectRatio="none" aria-hidden="true"><path d="M0 23H200 M50 0V46 M100 0V46 M150 0V46" class="chart-grid"/><path id="wave" d="M0 23H200"/></svg>';
 document.querySelector('#app').innerHTML = `
-<header class="masthead">
-  <a class="brand" href="./" aria-label="仿生机械实验室首页"><span class="brand-mark">${icon}</span><span><b>BIOMECH<span class="brand-slash"> / </span></b><small>FIELD RESEARCH LABORATORY</small></span></a>
-  <nav class="specimen-switch" aria-label="选择机械模型">
+<main class="workspace">
+  <nav class="specimen-switch viewport-switch" aria-label="选择机械模型">
     <button data-model="scorpion" aria-pressed="true"><span class="specimen-number">01</span><strong>TELSON</strong><span>SC-8</span></button>
     <button data-model="bee" aria-pressed="false"><span class="specimen-number">02</span><strong>MELLIS</strong><span>HB-7</span></button>
   </nav>
-  <div class="lab-status"><span class="status-dot"></span><span>系统在线<small>SIMULATION ACTIVE</small></span><span class="lab-bay">LAB / 02</span></div>
-</header>
-<main class="workspace">
-  <div id="stage" class="stage"><div class="loading" role="status" data-phase="download"><span class="loading-spinner"></span><span class="loading-kicker">BIOMECH / SPECIMEN LOADER</span><b id="loading-title">正在下载机械标本</b><div class="loading-metrics"><span id="loading-detail">准备下载</span><strong id="loading-percent">0%</strong></div><progress id="loading-progress" max="100" value="0" aria-label="模型下载进度"></progress><ol class="loading-steps" aria-label="模型加载阶段"><li>01 下载模型</li><li>02 解析结构</li><li>03 准备渲染</li></ol><button id="retry" hidden>重新加载</button></div></div>
+  <div id="stage" class="stage"></div>
   <section class="specimen-heading" aria-label="模型信息">
     <div class="eyebrow"><span class="orange-tick"></span> BIOMIMETIC ROBOTICS <span class="heading-index">SPECIMEN / <span id="specimen-index">001</span></span></div>
     <h1><span id="model-name">Telson</span> <span id="model-code">SC-8</span><span class="title-period">.</span></h1>
@@ -107,8 +102,16 @@ function renderControls() {
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 }
 
+function setLoading(visible) {
+  document.querySelector('.boot-loader').hidden= !visible;
+  document.documentElement.classList.toggle('is-loading',visible);
+  $('app').inert=visible;
+  $('app').setAttribute('aria-hidden',String(visible));
+  $('app').setAttribute('aria-busy',String(visible));
+}
+
 function showLoading({ phase, loaded = 0, total = 0, local = false }) {
-  document.querySelector('.loading').dataset.phase = phase;
+  document.querySelector('.boot-loader').dataset.phase = phase;
   const progress = $('loading-progress');
   if (phase === 'download') {
     $('loading-title').textContent = local ? '正在读取本地标本' : '正在下载机械标本';
@@ -135,14 +138,15 @@ async function selectModel(model) {
   state.ready=false; state.model=model; state.time=0; state.simulationTime=0; state.mode='stand';state.part='all';state.explode=0;state.targetExplode=0;
   Object.keys(motionWeights).forEach(key=>motionWeights[key]=0);
   $('stage').classList.add('is-loading');
-  document.querySelector('.loading').hidden=false;
+  setLoading(true);
+  $('retry').textContent='重新加载';
   showLoading({ phase: 'download' }); $('retry').hidden=true;
   renderControls();
   try {
     const loaded=await stage.load(model,progress=>{if(attempt===loadAttempt)showLoading(progress);});
     if(!loaded||attempt!==loadAttempt)return;
     state.ready=true;
-    document.querySelector('.loading').hidden=true;
+    setLoading(false);
     $('stage').classList.remove('is-loading');
     $('render-status').textContent='WEBGL / READY';
     updateHUD(currentPose());
@@ -152,7 +156,7 @@ async function selectModel(model) {
     console.error(error);
     $('loading-title').textContent='模型加载失败';
     $('loading-detail').textContent='请检查网络连接或模型文件，然后重试';
-    document.querySelector('.loading').dataset.phase='error';
+    document.querySelector('.boot-loader').dataset.phase='error';
     $('loading-progress').value=0;
     $('loading-percent').textContent='已中断';
     $('retry').hidden=false;
@@ -186,11 +190,11 @@ $('reset').onclick=()=>{
   ['explode','turntable','wireframe'].forEach(id=>press(id,false));press('labels',true);$('speed').value='1';
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view==='iso')));
 };
-$('retry').onclick=()=>selectModel(state.model);
+$('retry').onclick=()=>stage?selectModel(state.model):location.reload();
 $('help').onclick=()=>{manual();$('help-dialog').showModal();};
 $('close-help').onclick=()=>$('help-dialog').close();
 window.addEventListener('keydown',e=>{
-  if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.altKey||e.ctrlKey||e.metaKey||$('help-dialog').open)return;
+  if(!state.ready||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.altKey||e.ctrlKey||e.metaKey||$('help-dialog').open)return;
   if(e.code==='Space'){e.preventDefault();$('play').click();}
   if(e.key.toLowerCase()==='e')$('explode').click();
   if(e.key.toLowerCase()==='l')$('labels').click();
@@ -254,6 +258,8 @@ try {
   requestAnimationFrame(animate);
 } catch(error) {
   console.error(error);$('loading-title').textContent='无法启动三维显示';$('loading-detail').textContent='请启用浏览器硬件加速，或使用支持 WebGL 2 的浏览器';
+  document.querySelector('.boot-loader').dataset.phase='error';
+  $('loading-progress').value=0;$('loading-percent').textContent='已中断';$('retry').hidden=false;
 }
 updatePlay();
 

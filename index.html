@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="is-loading">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,37 +10,54 @@
     <style>
       html,body{margin:0;min-height:100%;background:#f4f1eb}
       #app{min-height:100vh}
-      .boot-loader{position:fixed;inset:0;z-index:999;display:grid;place-content:center;gap:16px;padding:32px;background:#f4f1eb;color:#33342f;font:500 14px/1.5 "Microsoft YaHei",sans-serif;letter-spacing:.12em}
-      .boot-loader__mark{color:#ed572f;font:700 12px/1.2 Arial,sans-serif;letter-spacing:.24em}
-      .boot-loader b{font-weight:700}
-      .boot-loader small{color:#969287;font:11px/1.5 "Courier New",monospace;letter-spacing:.12em}
-      .boot-loader__track{width:min(320px,70vw);height:3px;background:#ded7ca;overflow:hidden}
-      .boot-loader__track i{display:block;width:42%;height:100%;background:#ed572f;animation:boot-scan 1.35s ease-in-out infinite}
-      .boot-loader button{justify-self:start;padding:10px 20px;border:1px solid #ed572f;background:transparent;color:#b43c1b;font:inherit;cursor:pointer}
-      .boot-loader button[hidden]{display:none}
-      @keyframes boot-scan{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
-      @media(prefers-reduced-motion:reduce){.boot-loader__track i{animation:none;transform:none}}
+      html.is-loading{overflow:hidden}
+      html.is-loading #app{visibility:hidden}
+      .boot-loader{position:fixed;inset:0;z-index:999;display:grid;place-items:center;overflow:auto;padding:24px;box-sizing:border-box;background:#f4f1eb;color:#33342f;font:500 14px/1.5 "Noto Sans SC","Microsoft YaHei",sans-serif;letter-spacing:.06em}
+      .boot-loader__content{width:min(440px,100%);min-width:0;text-align:center}
+      .boot-loader__spinner{display:block;width:32px;height:32px;margin:0 auto 24px;border:1px solid #ded7ca;border-bottom-color:#ed572f;border-radius:50%;animation:boot-spin 1.2s linear infinite}
+      .boot-loader__mark{display:block;color:#ed572f;font:500 10px/1.6 var(--cyber,Arial),sans-serif;letter-spacing:.14em}
+      .boot-loader b{display:block;margin-top:16px;font-size:22px;font-weight:700;letter-spacing:.1em}
+      .loading-metrics{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:36px;text-align:left}
+      #loading-detail{color:#756d60;font-size:13px;line-height:1.6;letter-spacing:.03em}
+      #loading-percent{color:#ed572f;font:600 27px/1.3 var(--cyber,"Courier New"),monospace;white-space:nowrap}
+      #loading-progress{display:block;appearance:none;border:0;border-radius:0;width:100%;height:5px;margin:12px 0 0;background:#ded7ca;accent-color:#ed572f}
+      #loading-progress::-webkit-progress-bar{background:#ded7ca}
+      #loading-progress::-webkit-progress-value{background:#ed572f;transition:width .12s linear}
+      #loading-progress::-moz-progress-bar{background:#ed572f}
+      #loading-progress:indeterminate{background:linear-gradient(90deg,#ded7ca 0 30%,#ed572f 30% 65%,#ded7ca 65%);background-size:250% 100%;animation:boot-sweep 1.4s linear infinite}
+      #loading-progress:indeterminate::-webkit-progress-bar{background:transparent}
+      .loading-steps{display:flex;justify-content:space-between;gap:10px;padding:0;margin:20px 0 0;list-style:none;font-size:12px;color:#9b9282;letter-spacing:.03em}
+      .boot-loader[data-phase=download] .loading-steps li:nth-child(1),.boot-loader[data-phase=parse] .loading-steps li:nth-child(2),.boot-loader[data-phase=render] .loading-steps li:nth-child(3){color:#ed572f;font-weight:700}
+      .boot-loader[data-phase=error] .boot-loader__spinner{animation:none;border-color:#ed572f}
+      .boot-loader button{margin-top:24px;padding:10px 20px;border:1px solid #ed572f;background:transparent;color:#b43c1b;font:inherit;cursor:pointer}
+      .boot-loader[hidden],.boot-loader button[hidden]{display:none!important}
+      @keyframes boot-spin{to{transform:rotate(360deg)}}
+      @keyframes boot-sweep{to{background-position:-250% 0}}
+      @media(prefers-reduced-motion:reduce){.boot-loader__spinner,#loading-progress:indeterminate{animation:none}}
+      @media(max-width:600px){.boot-loader{padding:24px}.boot-loader b{font-size:19px}.boot-loader__mark{font-size:9px}.loading-steps{font-size:11px;gap:6px}#loading-percent{font-size:24px}}
     </style>
   </head>
   <body>
-    <div id="app">
-      <div class="boot-loader" role="status" aria-live="polite">
-        <span class="boot-loader__mark">BIOMECH / BOOT SEQUENCE</span>
-        <b>正在启动机械实验室</b>
-        <span class="boot-loader__track" aria-hidden="true"><i></i></span>
-        <small>INITIALIZING WEBGL · LOADING SPECIMENS</small>
-        <button type="button" hidden>刷新重试</button>
+    <div class="boot-loader" role="status" aria-live="polite" data-phase="boot">
+      <div class="boot-loader__content">
+        <span class="boot-loader__spinner" aria-hidden="true"></span>
+        <span class="boot-loader__mark">BIOMECH / SPECIMEN LOADER</span>
+        <b id="loading-title">正在启动机械实验室</b>
+        <div class="loading-metrics"><span id="loading-detail">初始化三维显示</span><strong id="loading-percent">启动中</strong></div>
+        <progress id="loading-progress" max="100" aria-label="模型下载进度"></progress>
+        <ol class="loading-steps" aria-label="模型加载阶段"><li>01 下载模型</li><li>02 解析结构</li><li>03 准备渲染</li></ol>
+        <button id="retry" type="button" hidden>刷新重试</button>
       </div>
     </div>
     <script>
       (function () {
         var loader = document.querySelector('.boot-loader');
         var retry = loader.querySelector('button');
-        retry.addEventListener('click', function () { location.reload(); });
+        retry.onclick = function () { location.reload(); };
         function message(title, detail) {
-          if (!loader.isConnected) return;
+          if (loader.dataset.phase !== 'boot') return;
           loader.querySelector('b').textContent = title;
-          loader.querySelector('small').textContent = detail;
+          document.getElementById('loading-detail').textContent = detail;
           retry.hidden = false;
         }
         window.addEventListener('error', function () {
@@ -55,6 +72,7 @@
         }, 30000);
       }());
     </script>
+    <div id="app" inert aria-hidden="true" aria-busy="true"></div>
     <noscript>需要启用 JavaScript 才能运行 BIOMECH 仿生机械实验室。</noscript>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -56,6 +56,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/mechanical3d/`, { waitUntil: 'commit' });
   await expect(page.locator('.boot-loader')).toBeVisible({ timeout: 2000 });
   await expect(page.locator('.boot-loader')).toContainText('正在启动机械实验室');
+  await page.evaluate(() => { window.initialLoader = document.querySelector('.boot-loader'); });
   await mkdir('review/loading', { recursive: true });
   // Capture the painted viewport directly: Playwright's screenshot helper
   // waits for document.fonts.ready, which needs the paused HTML to finish.
@@ -66,18 +67,50 @@ try {
   await expect(page.locator('#loading-percent')).toHaveText('25%');
   await expect(page.locator('#loading-progress')).toHaveAttribute('value', '25');
   await expect(page.locator('#loading-detail')).toHaveText('4.0 / 15.8 MB');
+  assert.equal(await page.evaluate(() => window.initialLoader === document.querySelector('.boot-loader')), true);
+  await expect(page.locator('#app')).toBeHidden();
+  await expect(page.locator('#app')).toHaveAttribute('inert', '');
+  await expect(page.locator('.stage .loading')).toHaveCount(0);
+  assert.deepEqual(await page.locator('.boot-loader').boundingBox(), { x: 0, y: 0, width: 1280, height: 720 });
   await page.screenshot({ path: 'review/loading/model-progress.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.deepEqual(await page.locator('.boot-loader').boundingBox(), { x: 0, y: 0, width: 390, height: 844 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.screenshot({ path: 'review/loading/model-progress-mobile.png' });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.evaluate(() => {
+    window.loadingPhases = [];
+    new MutationObserver(records => {
+      for (const record of records) window.loadingPhases.push(record.oldValue);
+    }).observe(window.initialLoader, { attributes: true, attributeFilter: ['data-phase'], attributeOldValue: true });
+  });
   releaseMoreModel();
   await expect(page.locator('#loading-percent')).toHaveText('75%');
   await expect(page.locator('#loading-progress')).toHaveAttribute('value', '75');
   releaseModel();
   await page.waitForFunction(() => window.biomech?.state.ready, null, { timeout: 20000 });
-  await expect(page.locator('.boot-loader')).toHaveCount(0);
+  await expect(page.locator('.boot-loader')).toBeHidden();
+  await expect(page.locator('#app')).toBeVisible();
+  await expect(page.locator('#app')).not.toHaveAttribute('inert');
+  const phases = await page.evaluate(() => window.loadingPhases);
+  assert.ok(phases.includes('parse') && phases.includes('render'));
+  await expect(page.locator('header')).toHaveCount(0);
+  const switchBounds = await page.locator('.viewport-switch').boundingBox();
+  assert.ok(switchBounds.y < 40 && switchBounds.x + switchBounds.width > 1200);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: 'review/loading/viewport-tabs.png' });
   await page.locator('[data-model="bee"]').click();
   await page.waitForFunction(() => window.biomech?.state.ready && window.biomech.state.model === 'bee', null, { timeout: 20000 });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(async () => (await page.locator('.specimen-heading').boundingBox()).y).toBe(90);
+  const mobileSwitch = await page.locator('.viewport-switch').boundingBox();
+  const mobileHeading = await page.locator('.specimen-heading').boundingBox();
+  assert.ok(mobileSwitch.x >= 0 && mobileSwitch.x + mobileSwitch.width <= 390);
+  await page.screenshot({ path: 'review/loading/viewport-tabs-mobile.png' });
+  assert.ok(mobileSwitch.y + mobileSwitch.height < mobileHeading.y, JSON.stringify({ mobileSwitch, mobileHeading }));
   assert.deepEqual(errors, []);
   assert.deepEqual(requestedModels, ['telson-sc8.glb', 'mellis-hb7.glb']);
-  console.log('PASS: early loading, real 25% → 75% model download progress without Content-Length, and both specimens under /mechanical3d/.');
+  console.log('PASS: one full-screen loader through boot/download/parse/render, real 25% → 75% progress, desktop/mobile viewport tabs, and both specimens under /mechanical3d/.');
 } finally {
   releaseDownload();
   releaseMoreModel();
