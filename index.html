@@ -7,9 +7,29 @@
     <meta name="description" content="仿生机械实验室：探索机械蝎子与机械蜜蜂，交互拆解、关节运动与实时仿真仪表。" />
     <title>BIOMECH / 仿生机械实验室</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      html,body{margin:0;min-height:100%;background:#f4f1eb}
+      #app{min-height:100vh}
+      .boot-loader{position:fixed;inset:0;z-index:999;display:grid;place-content:center;gap:16px;padding:32px;background:#f4f1eb;color:#33342f;font:500 14px/1.5 "Microsoft YaHei",sans-serif;letter-spacing:.12em}
+      .boot-loader__mark{color:#ed572f;font:700 12px/1.2 Arial,sans-serif;letter-spacing:.24em}
+      .boot-loader b{font-weight:700}
+      .boot-loader small{color:#969287;font:11px/1.5 "Courier New",monospace;letter-spacing:.12em}
+      .boot-loader__track{width:min(320px,70vw);height:3px;background:#ded7ca;overflow:hidden}
+      .boot-loader__track i{display:block;width:42%;height:100%;background:#ed572f;animation:boot-scan 1.35s ease-in-out infinite}
+      @keyframes boot-scan{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+      @media(prefers-reduced-motion:reduce){.boot-loader__track i{animation:none;transform:none}}
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="boot-loader" role="status" aria-live="polite">
+        <span class="boot-loader__mark">BIOMECH / BOOT SEQUENCE</span>
+        <b>正在启动机械实验室</b>
+        <span class="boot-loader__track" aria-hidden="true"><i></i></span>
+        <small>INITIALIZING WEBGL · LOADING SPECIMENS</small>
+      </div>
+    </div>
+    <noscript>需要启用 JavaScript 才能运行 BIOMECH 仿生机械实验室。</noscript>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
