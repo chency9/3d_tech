@@ -10,16 +10,17 @@
     },
     {
       "model": "bee",
-      "meshes": 208,
-      "triangles": 670194,
-      "drawCalls": 22
+      "meshes": 220,
+      "triangles": 684986,
+      "drawCalls": 24
     },
     {
       "model": "scorpion",
-      "meshes": 737,
-      "triangles": 1269810,
-      "drawCalls": 26
+      "meshes": 731,
+      "triangles": 1411410,
+      "drawCalls": 28
     }
   ],
-  "runtimeErrors": []
+  "runtimeErrors": [],
+  "revision": "REV 04: rounded dorsal carapace, stereo optics and pale micro-vein wings"
 }

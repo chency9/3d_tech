@@ -13,10 +13,11 @@ old=scene.objects.get('Mellis_HB7')
 if old:
     for obj in list(old.children_recursive)+[old]:bpy.data.objects.remove(obj,do_unlink=True)
 collection=bpy.data.collections.new('Mellis HB-7 · REV 03 · micro flight machinery');scene.collection.children.link(collection);p.use_collection(collection)
-membrane=p.mat('07','REV03 transparent wing film',(.66,.72,.72),.08,.48)
-principled=next(n for n in membrane.node_tree.nodes if n.type=='BSDF_PRINCIPLED');principled.inputs['Alpha'].default_value=.13
-membrane.diffuse_color=(.66,.72,.72,.13);membrane.surface_render_method='DITHERED'
-root=group('Mellis_HB7');root['specimen']='Mellis HB-7';root['revision']=3
+membrane=p.mat('07','REV04 transparent wing film',(.88,.90,.86),.02,.62)
+wing_vein=p.mat('09','REV04 pale chitin wing veins',(.66,.69,.65),.10,.75)
+principled=next(n for n in membrane.node_tree.nodes if n.type=='BSDF_PRINCIPLED');principled.inputs['Alpha'].default_value=.045
+membrane.diffuse_color=(.88,.90,.86,.045);membrane.surface_render_method='DITHERED'
+root=group('Mellis_HB7');root['specimen']='Mellis HB-7';root['revision']=4
 chassis=group('HB_chassis',parent=root)
 body=group('HB_body',parent=chassis,assembly='body')
 print('HB-7: open thorax and gear trains',flush=True)
@@ -57,18 +58,32 @@ print('HB-7: optics, antennal sensors and neck bearing',flush=True)
 neck=group('HB_neck',(0,1.70,.57),chassis,assembly='head')
 for z,r in [(.52,.28),(.59,.32),(.66,.28)]:ring('Neck bearing',(0,1.70,z),(0,0,1),r,.045,metal if z==.59 else carbon,neck,n=48)
 head=group('HB_head',(0,1.70,.97),chassis,assembly='head',explode=(0,.10,.62))
-sphere('Optical skull pressure liner',(0,1.70,.97),(.51,.49,.45),carbon,head)
+sphere('Optical skull pressure liner',(0,1.70,.97),(.56,.47,.44),carbon,head)
+forehead=group('HB_forehead_shell',(0,1.70,.97),head,explode=(0,.20,.32))
+sphere('Continuous ceramic forehead',(0,1.70,.97),(.535,.49,.46),white,forehead)
 for side in [-1,1]:
     cheek=group('HB_optic_shield_'+str(side),(side*.25,1.72,.95),head,explode=(side*.24,.15,0))
-    sphere('Ceramic optical housing',(side*.27,1.73,.94),(.25,.43,.40),white,cheek)
-    for y in [1.47,1.94]:bolt('Optic panel fixing',(side*.44,y,.99),cheek,(side,0,0),.028)
-for z,r,mat in [(1.25,.36,white),(1.33,.345,carbon),(1.39,.31,accent),(1.413,.28,metal)]:
-    ring('Camera concentric mounting',(0,1.70,z),(0,0,1),r,.025,mat,head,inner=r*.88,n=64)
-cyl('Precision smoked objective',(0,1.70,1.38),(0,1.70,1.43),.255,glass,head,n=64)
-sphere('Curved optical front glass',(0,1.70,1.43),(.219,.219,.038),glass,head)
-for r in [.14,.19,.235]:ring('Objective engraving',(0,1.70,1.465),(0,0,1),r,.004,metal,head,inner=r-.002,n=64)
-for i in range(10):
-    a=i*math.tau/10;bolt('Objective bezel screw',(.325*math.cos(a),1.70+.325*math.sin(a),1.415),head,(0,0,1),.015)
+    sphere('Rounded ceramic optical housing',(side*.25,1.73,.97),(.35,.49,.44),white,cheek)
+    for y in [1.45,2.00]:bolt('Optic panel fixing',(side*.46,y,.99),cheek,(side,0,0),.022)
+    # Two forward-facing lateral objectives, each with an independent optical barrel.
+    axis=V((side*.50,0,.8660254));center=V((side*.39,1.75,1.22))
+    eye=group('HB_optic_'+('L' if side<0 else 'R'),center,head,explode=(side*.25,.04,.27))
+    cyl('Stereo optical barrel',center-axis*.10,center+axis*.13,.273,carbon,eye,n=64)
+    for depth,r,mat in [(.04,.285,white),(.11,.278,carbon),(.145,.259,accent),(.167,.237,metal)]:
+        ring('Stereo concentric objective bezel',center+axis*depth,axis,r,.018,mat,eye,inner=r-.020,n=64)
+    face=center+axis*.17
+    cyl('Smoked sapphire objective',face-axis*.025,face,.218,glass,eye,n=64)
+    _,u,v=basis(axis);verts=[];rings=12;steps=64
+    for row in range(rings+1):
+        radius=.213*row/rings
+        for j in range(steps):
+            angle=j*math.tau/steps
+            verts.append(face+(u*math.cos(angle)+v*math.sin(angle))*radius+axis*(.037*math.sqrt(max(0,1-(radius/.213)**2))))
+    mesh('Curved stereo optical glass',verts,[(k*steps+j,k*steps+(j+1)%steps,(k+1)*steps+(j+1)%steps,(k+1)*steps+j) for k in range(rings) for j in range(steps)],glass,eye,smooth=True)
+    for radius in [.14,.19]:ring('Optical glass etched ring',face+axis*.023,axis,radius,.003,metal,eye,inner=radius-.0015,n=64)
+    for j in range(8):
+        angle=j*math.tau/8
+        bolt('Stereo bezel retaining screw',center+axis*.163+(u*math.cos(angle)+v*math.sin(angle))*.272,eye,axis,.010)
 for side in [-1,1]:
     q=V((side*.29,2.05,.85))
     antenna=group('HB_antenna_'+str(side),q,head,explode=(side*.22,.44,0))
@@ -114,19 +129,19 @@ for side in [-1,1]:
         nu=48;nv=14;vertices=[point(j/nu,-1+2*k/nv) for j in range(nu+1) for k in range(nv+1)]
         faces=[(j*(nv+1)+k,j*(nv+1)+k+1,(j+1)*(nv+1)+k+1,(j+1)*(nv+1)+k) for j in range(nu) for k in range(nv)]
         mesh('Transparent segmented aerodynamic film',vertices,faces,membrane,wing,smooth=True)
-        for edge,r,mat in [(-1,.018,metal),(1,.025,carbon)]:cable('Composite perimeter spar',[point(j/24,edge) for j in range(25)],r,mat,wing)
-        cable('Vermilion wingtip trim',[point(j/32,1) for j in range(25,33)]+[point(j/32,-1) for j in range(31,24,-1)],.027,accent,wing)
-        for v in [-.72,-.48,-.24,0,.24,.48,.72]:cable('Longitudinal micro spar',[point(j/24,v) for j in range(1,24)],.009 if v else .015,carbon if v==0 else metal,wing)
+        for edge,r,mat in [(-1,.005,wing_vein),(1,.007,wing_vein)]:cable('Composite perimeter spar',[point(j/24,edge) for j in range(25)],r,mat,wing)
+        cable('Vermilion wingtip trim',[point(j/32,1) for j in range(25,33)]+[point(j/32,-1) for j in range(31,24,-1)],.009,accent,wing)
+        for v in [-.72,-.48,-.24,0,.24,.48,.72]:cable('Longitudinal micro spar',[point(j/24,v) for j in range(1,24)],.0025 if v else .004,wing_vein,wing)
         for j in range(1,17):
             t=j/18
-            cable('Transverse rib',[point(t,-1),point(t+.008,-.5),point(t+.016,0),point(t+.008,.5),point(t,1)],.008,carbon,wing)
+            cable('Transverse rib',[point(t,-1),point(t+.008,-.5),point(t+.016,0),point(t+.008,.5),point(t,1)],.002,wing_vein,wing)
             for v in [-.72,-.24,.24,.72]:
                 q=point(t+.012,v)
-                cyl('Micro spar bonded node',q,q+V((0,.008,0)),.014,carbon,wing,n=8)
+                cyl('Micro spar bonded node',q,q+V((0,.002,0)),.0045,wing_vein,wing,n=8)
         for j in range(1,7):
             t=j/9
-            cable('Diagonal anti-shear brace',[point(t,-.95),point(t+.07,-.48)],.006,metal,wing)
-            cable('Diagonal anti-shear brace',[point(t,.95),point(t+.07,.48)],.006,metal,wing)
+            cable('Diagonal anti-shear brace',[point(t,-.95),point(t+.07,-.48)],.0018,wing_vein,wing)
+            cable('Diagonal anti-shear brace',[point(t,.95),point(t+.07,.48)],.0018,wing_vein,wing)
         hub('Wing root output bearing',base,(0,0,1),.13,wing)
         crank=group(f'HB_wing_crank_{label}{i}',base,body)
         gear('Wing root reduction gear',base+V((0,-.06,0)),(0,0,1),.13,.035,24,brass,crank)
@@ -142,7 +157,7 @@ for side in [-1,1]:
         cyl('Tarsal tendon',ankle,foot,.037,carbon,tarsus,r2=.025,n=20)
         for sign in [-1,1]:cable('Terminal gripping claw',[foot+V((sign*.04,.04,0)),foot+V((sign*.07,-.01,.08)),foot+V((sign*.025,0,.14))],.018,carbon,tarsus)
 root['editable_meshes']=sum(obj.type=='MESH' for obj in root.children_recursive)
-root['rigDescription']='Four reticulated wings, exposed thorax reduction gears, a spring-loaded telescoping abdomen, six two-link legs and camera optics.'
+root['rigDescription']='Four reticulated wings, exposed thorax reduction gears, a spring-loaded telescoping abdomen, six two-link legs and paired stereo optics.'
 visible=set(root.children_recursive)|{root}
 for obj in scene.objects:
     if obj.type in {'MESH','CURVE','EMPTY'}:obj.hide_set(obj not in visible)

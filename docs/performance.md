@@ -1,6 +1,6 @@
 # 保持模型精度的渲染优化
 
-> 本文是 REV 02 的历史对照实验。REV 03 新增 OC-8 并重建 HB-7、扩充 SC-8，几何数量已变化；当前三模型的绘制统计见 [precision-revision.json](precision-revision.json)。下面的前后数值仅用于评估当时同一模型的批量绘制优化。
+> 本文是 REV 02 的历史对照实验。REV 03 新增 OC-8 并重建 HB-7、扩充 SC-8，几何数量已变化；REV 04 当前三模型的绘制统计见 [precision-revision.json](precision-revision.json)。下面的前后数值仅用于评估当时同一模型的批量绘制优化。
 
 模型文件、顶点、三角形、材质参数、抗锯齿、像素比与 2048×2048 阴影设置均保持原样。优化集中在绘制提交和重复计算。
 

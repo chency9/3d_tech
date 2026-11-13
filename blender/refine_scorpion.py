@@ -92,6 +92,51 @@ for i,(a,z) in enumerate(zip(points,points[1:])):
     for t in [.12,.89]:ring('Caudal rotary dust seal',a.lerp(z,t),axis,.19 if i<4 else .16,.045,black,parent,n=48)
 
 body=scene.objects['SC_body']
+print('SC-8: rounded vaulted dorsal carapace',flush=True)
+def dorsal_point(side,theta,z,inset=0):
+    fullness=.85+.15*math.cos(z/1.42*math.pi*.5)
+    return V((side*(.99*fullness-inset)*math.sin(theta),1.32+(.91*fullness-inset)*math.cos(theta),z))
+
+for i in range(6):
+    z=-1.08+i*.40
+    for side,label in [(-1,'L'),(1,'R')]:
+        deck=scene.objects[f'SC_armor_{label}_{i}']
+        # Replace the old flat leaf, keeping its original assembly pivot and teardown vector.
+        for child in list(deck.children_recursive):bpy.data.objects.remove(child,do_unlink=True)
+        steps=40;rows=6;vertices=[]
+        for inset in [0,.055]:
+            for row in range(rows+1):
+                zz=z-.175+row/rows*.35
+                for j in range(steps+1):vertices.append(dorsal_point(side,.065+j/steps*1.44,zz,inset))
+        stride=steps+1;layer=(rows+1)*stride;faces=[]
+        for skin in [0,1]:
+            offset=skin*layer
+            for row in range(rows):
+                for j in range(steps):
+                    q=offset+row*stride+j;faces.append((q,q+1,q+1+stride,q+stride))
+        for row in [0,rows]:
+            for j in range(steps):
+                q=row*stride+j;faces.append((q,q+1,q+1+layer,q+layer))
+        for j in [0,steps]:
+            for row in range(rows):
+                q=row*stride+j;faces.append((q,q+stride,q+stride+layer,q+layer))
+        mesh('Vaulted ceramic dorsal plate',vertices,faces,white,deck,smooth=True)
+        for dz in [-.18,.18]:
+            cable('Dorsal rounded gasket',[dorsal_point(side,.065+j/32*1.44,z+dz,.032) for j in range(33)],.017,black,deck)
+        for theta in [.18,1.27]:
+            normal=V((side*math.sin(theta),math.cos(theta),0))
+            for dz in [-.12,.12]:bolt('Vaulted dorsal captive screw',dorsal_point(side,theta,z+dz,-.008),deck,normal,.024)
+        for dz in [-.085,0,.085]:
+            # Surface-following inset louvres keep the dome silhouette continuous.
+            verts=[dorsal_point(side,.44+j/12*.48,z+dz+edge*.009,-.006) for edge in [-1,1] for j in range(13)]
+            mesh('Curved cooling louvre',verts,[(j,j+1,j+14,j+13) for j in range(12)],black,deck,smooth=True)
+        cable('Curved orange panel index',[dorsal_point(side,1.08,z+dz,-.009) for dz in [-.09,0,.09]],.014,accent,deck)
+# Front ribbing steps down from the domed back to the sensor brow.
+for i in range(3):
+    rib=group(f'SC_cervical_arch_{i}',(0,1.5,1.18+i*.12),body,'armor',(0,.35+i*.06,.10))
+    z=1.18+i*.12;width=.86-i*.12;height=.74-i*.13
+    for mat,shift,radius in [(carbon,0,.048),(white,.018,.032)]:
+        cable('Rounded cervical overlapping rib',[V((width*math.sin(-1.35+j/48*2.7),1.31+height*math.cos(-1.35+j/48*2.7)+shift,z)) for j in range(49)],radius,mat,rib)
 for side in [-1,1]:
     for i in range(3):
         center=V((side*.81,1.35,-.74+i*.7))
@@ -102,7 +147,7 @@ for side in [-1,1]:
             theta=j*math.tau/6
             bolt('Manifold service screw',center+V((side*.025,math.sin(theta)*.11,math.cos(theta)*.11)),service,(side,0,0),.018)
 
-root['revision']=3
+root['revision']=4
 root['editable_meshes']=sum(o.type=='MESH' for o in root.children_recursive)
 root['rigDescription']='Eight IK legs and linked hydraulic pistons; split hollow ceramic limb and tail armor; geared pincers with removable service cheeks.'
 visible=set(root.children_recursive)|{root}

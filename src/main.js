@@ -100,7 +100,7 @@ function renderControls() {
   $('output-heading').innerHTML=oct?'喷流推力 <span>/ THRUST</span>':bee?'运行功率 <span>/ POWER</span>':'钳爪握力 <span>/ GRIP</span>';
   $('output-unit').textContent=bee?'W':'N';
   $('output-caption').textContent=oct?'MANTLE / APERTURE':bee?'WING / DEFLECTION':'CHELA / OPENING';
-  $('anatomy').innerHTML=oct?'8 ARMS <i>·</i> 96 JOINTS <i>·</i> 8 MANTLE PETALS':bee?'6 LEGS <i>·</i> 4 WINGS <i>·</i> 1 OPTIC':'8 LEGS <i>·</i> 2 CLAWS <i>·</i> 6 TAIL LINKS';
+  $('anatomy').innerHTML=oct?'8 ARMS <i>·</i> 96 JOINTS <i>·</i> 8 MANTLE PETALS':bee?'6 LEGS <i>·</i> 4 WINGS <i>·</i> 2 OPTICS':'8 LEGS <i>·</i> 2 CLAWS <i>·</i> 6 TAIL LINKS';
   document.querySelectorAll('[data-model]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.model===state.model)));
   document.querySelectorAll('[data-part]').forEach(b=>b.onclick=()=>setPart(b.dataset.part));
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
