@@ -18,13 +18,17 @@ const [css, js, manifest] = await Promise.all([
   readFile(path.join(root, 'public/models/manifest.json'), 'utf8').then(JSON.parse),
 ]);
 
-const embeddedModels = {};
+const modelBytes = {};
 for (const entry of manifest) {
   const bytes = await readFile(path.join(dist, 'models', entry.file));
-  embeddedModels[entry.file] = bytes.toString('base64');
+  modelBytes[entry.file] = bytes.length;
+  // Classic scripts work under file:// without changing browser settings.
+  // Each specimen has its own companion script, read only on local opening.
+  const data = `globalThis.__BIOMECH_MODELS__ ??= {};globalThis.__BIOMECH_MODELS__[${JSON.stringify(entry.file)}]=${JSON.stringify(bytes.toString('base64'))};`;
+  await writeFile(path.join(dist, 'models', `${entry.file}.js`), data, 'utf8');
 }
 
-const modelScript = `<script data-standalone-models>globalThis.__BIOMECH_MODELS__=${JSON.stringify(embeddedModels)};</script>`;
+const modelScript = `<script>globalThis.__BIOMECH_MODEL_BYTES__=${JSON.stringify(modelBytes)};</script>`;
 // The generated stylesheet lives in dist/assets, while an inline style is
 // resolved from dist/index.html. Move font URLs one directory deeper.
 const standaloneCss = css.replaceAll('url(./', 'url(./assets/');
@@ -36,10 +40,8 @@ const safeJs = js.replaceAll('</script', '<\\/script');
 const inlineModule = `<script type="module" data-standalone-bundle>\n${safeJs}\n</script>`;
 // Use replacement callbacks: minified vendor code contains `$&` sequences,
 // which String#replace would otherwise expand into the matched tag.
-// Vite puts the entry script in <head>. Embedding the 25 MiB model payload
-// there would keep the HTML parser from reaching the startup screen until
-// almost the entire document had downloaded. Keep the loader first in <body>
-// and append the heavy payload after it so streaming responses can paint it.
+// Keep the startup screen before the bundle. Model bytes live in separate
+// files so HTTP pages can report actual GLB download progress immediately.
 const standalone = html
   .replace(cssMatch[0], () => inlineStyle)
   .replace(jsMatch[0], '')
@@ -47,4 +49,4 @@ const standalone = html
 await writeFile(htmlPath, standalone, 'utf8');
 
 const megabytes = (Buffer.byteLength(standalone) / 1024 / 1024).toFixed(1);
-console.log(`Standalone dist/index.html written (${megabytes} MiB, ${manifest.length} embedded models)`);
+console.log(`dist/index.html written (${megabytes} MiB); ${manifest.length} models support HTTP progress and file:// companion scripts`);

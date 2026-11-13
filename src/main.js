@@ -24,7 +24,7 @@ document.querySelector('#app').innerHTML = `
   <div class="lab-status"><span class="status-dot"></span><span>系统在线<small>SIMULATION ACTIVE</small></span><span class="lab-bay">LAB / 02</span></div>
 </header>
 <main class="workspace">
-  <div id="stage" class="stage"><div class="loading" role="status"><span class="loading-spinner"></span><b id="loading-title">正在载入机械标本</b><small id="loading-detail">PREPARING SPECIMEN</small><button id="retry" hidden>重新加载</button></div></div>
+  <div id="stage" class="stage"><div class="loading" role="status" data-phase="download"><span class="loading-spinner"></span><span class="loading-kicker">BIOMECH / SPECIMEN LOADER</span><b id="loading-title">正在下载机械标本</b><div class="loading-metrics"><span id="loading-detail">准备下载</span><strong id="loading-percent">0%</strong></div><progress id="loading-progress" max="100" value="0" aria-label="模型下载进度"></progress><ol class="loading-steps" aria-label="模型加载阶段"><li>01 下载模型</li><li>02 解析结构</li><li>03 准备渲染</li></ol><button id="retry" hidden>重新加载</button></div></div>
   <section class="specimen-heading" aria-label="模型信息">
     <div class="eyebrow"><span class="orange-tick"></span> BIOMIMETIC ROBOTICS <span class="heading-index">SPECIMEN / <span id="specimen-index">001</span></span></div>
     <h1><span id="model-name">Telson</span> <span id="model-code">SC-8</span><span class="title-period">.</span></h1>
@@ -107,16 +107,39 @@ function renderControls() {
   document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 }
 
+function showLoading({ phase, loaded = 0, total = 0, local = false }) {
+  document.querySelector('.loading').dataset.phase = phase;
+  const progress = $('loading-progress');
+  if (phase === 'download') {
+    $('loading-title').textContent = local ? '正在读取本地标本' : '正在下载机械标本';
+    const mb = bytes => (bytes / 1024 / 1024).toFixed(1);
+    $('loading-detail').textContent = local ? '读取本地模型文件' : total ? `${mb(loaded)} / ${mb(total)} MB` : `${mb(loaded)} MB 已下载`;
+    if (total && !local) {
+      const percent = Math.min(100, Math.floor(loaded / total * 100));
+      progress.value = percent;
+      $('loading-percent').textContent = `${percent}%`;
+    } else {
+      progress.removeAttribute('value');
+      $('loading-percent').textContent = local ? '读取中' : '下载中';
+    }
+  } else {
+    progress.removeAttribute('value');
+    $('loading-percent').textContent = phase === 'ready' ? '就绪' : '处理中';
+    $('loading-title').textContent = phase === 'render' ? '正在准备渲染' : '正在解析机械结构';
+    $('loading-detail').textContent = phase === 'render' ? '准备材质、灯光与关节' : '下载完成，正在组装部件';
+  }
+}
+
 async function selectModel(model) {
   const attempt=++loadAttempt;
   state.ready=false; state.model=model; state.time=0; state.simulationTime=0; state.mode='stand';state.part='all';state.explode=0;state.targetExplode=0;
   Object.keys(motionWeights).forEach(key=>motionWeights[key]=0);
   $('stage').classList.add('is-loading');
   document.querySelector('.loading').hidden=false;
-  $('loading-title').textContent='正在载入机械标本'; $('loading-detail').textContent='PREPARING SPECIMEN'; $('retry').hidden=true;
+  showLoading({ phase: 'download' }); $('retry').hidden=true;
   renderControls();
   try {
-    const loaded=await stage.load(model,p=>{$('loading-detail').textContent=`LOADING GEOMETRY / ${Math.round(p*100)}%`;});
+    const loaded=await stage.load(model,progress=>{if(attempt===loadAttempt)showLoading(progress);});
     if(!loaded||attempt!==loadAttempt)return;
     state.ready=true;
     document.querySelector('.loading').hidden=true;
@@ -128,7 +151,10 @@ async function selectModel(model) {
     if(attempt!==loadAttempt)return;
     console.error(error);
     $('loading-title').textContent='模型加载失败';
-    $('loading-detail').textContent='请检查本地服务与模型文件，然后重试';
+    $('loading-detail').textContent='请检查网络连接或模型文件，然后重试';
+    document.querySelector('.loading').dataset.phase='error';
+    $('loading-progress').value=0;
+    $('loading-percent').textContent='已中断';
     $('retry').hidden=false;
     $('render-status').textContent='MODEL / UNAVAILABLE';
   }

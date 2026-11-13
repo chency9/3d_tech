@@ -35,7 +35,8 @@ BIOMECH 是一个离线优先的交互式机械生物实验室：桌面端展示
 - **拆解式讲解**：部件选择、爆炸距离、线框、标签、四组相机视角、旋转台和 28 秒自动导览。
 - **实时遥测面板**：步态频率、尾部角度、执行器负载、钳爪开度、动作状态和时间轴同步变化。
 - **赛博中文界面**：Orbitron 拉丁字形配合 Noto Sans SC 中文字形，统一字重、字距和橙色信号色。
-- **离线交付**：构建后的 `dist/index.html` 内嵌两个 GLB 模型、CSS 和 JavaScript，保留 `dist` 文件夹后可直接双击打开。
+- **在线与离线交付**：网页通过独立 GLB 请求显示真实下载进度；保留完整 `dist` 文件夹后，也能双击 `index.html` 离线打开。
+- **模型加载进度**：显示已下载 MB、百分比、下载/解析/渲染三个阶段；下载失败时提供重试。
 
 ## 快速开始
 
@@ -56,9 +57,10 @@ npm run build
 
 构建脚本会先运行 Vite，再执行 `scripts/make-standalone.mjs`：
 
-1. 将模型、样式和打包脚本内嵌到 `dist/index.html`。
+1. 将样式和应用脚本内嵌到 `dist/index.html`，入口约 0.7 MiB，尽早显示首屏。
 2. 保留 `dist/assets/` 作为本地字体资源目录。
-3. 让 `dist/index.html` 在 `file://` 环境下直接解析 GLB，不依赖本地 HTTP 服务。
+3. 网页环境按需下载 `models/*.glb`，通过 Three.js FileLoader 报告实际接收字节数，再由 GLTFLoader 解析。
+4. 为每个模型生成 `models/*.glb.js` 本地数据文件，仅在 `file://` 环境读取，不依赖本地 HTTP 服务。
 
 构建完成后，直接双击：
 
@@ -66,7 +68,7 @@ npm run build
 dist/index.html
 ```
 
-建议将整个 `dist/` 文件夹一起移动，以保留 Orbitron、Noto Sans SC 等字体资源。模型已经内嵌，因此即使只保留 HTML，核心 3D 交互也能启动。
+请将整个 `dist/` 文件夹一起移动或上传，保留 `assets/` 字体和 `models/` 模型资源。双击运行需要这些同目录文件。
 
 可以用下面的检查命令验证双击版本：
 
@@ -76,7 +78,7 @@ npm run test:file
 
 它会用 Chrome 通过真实 `file://` 地址打开 `dist/index.html`，确认模型就绪且没有页面错误或资源请求失败。
 
-首屏 Loading 位于内嵌模型数据之前，下载大模型时即可显示。`npm run test:loading` 会暂停 HTML 下载，只发送前 64 KB，确认 Loading 可见后才继续下载，并验证两种标本均能加载。启动超过 30 秒时会显示等待说明及刷新入口。
+首屏 Loading 位于应用脚本之前。`npm run test:loading` 会先暂停 HTML 下载，确认首屏可见，再让模型下载分别停在 25% 和 75%，验证进度条及 MB 读数随实际字节数变化，最后验证两种标本均能加载。测试还覆盖没有 Content-Length 时使用构建时模型大小计算进度的情况。启动超过 30 秒时会显示等待说明及刷新入口。
 
 ## 操作方式
 
@@ -113,7 +115,7 @@ pwsh -NoProfile -File blender/export.ps1
 pwsh -NoProfile -File blender/export.ps1 -Blender "D:\Blender\blender.exe" -BlendFile "D:\Models\refined.blend"
 ```
 
-导出后重新运行 `npm run build`，网页会读取最新 GLB 并重新生成可双击的单文件入口。
+导出后重新运行 `npm run build`，网页会读取最新 GLB 并重新生成可双击运行的完整产物。
 
 ## 项目结构
 
@@ -135,7 +137,8 @@ public/models/
 ├─ mellis-hb7.glb
 └─ manifest.json
 scripts/
-├─ make-standalone.mjs  将 dist 变成可双击运行的单文件入口
+├─ make-standalone.mjs  构建同时支持在线进度和本地双击的产物
+├─ test-loading.mjs     暂停 HTML 与 GLB 下载，验证首屏和真实进度
 └─ test-file.mjs        通过 file:// 验证构建产物
 ```
 
@@ -146,6 +149,7 @@ npm run build
 npm run test:math
 npm test
 npm run test:file
+npm run test:loading
 ```
 
 当前验证覆盖：

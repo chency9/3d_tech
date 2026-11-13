@@ -7,6 +7,22 @@ import { ScorpionRig } from './scorpion-rig.js';
 
 const TAU = Math.PI * 2;
 const cameraViews = { iso: [7.8, 5.8, 10.3], side: [11.5, 3.1, .1], front: [0, 3.8, 13.5], top: [.01, 13.5, .01], detail: [4.5,4.4,6.0] };
+const paintLoading = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+async function localModel(url, file) {
+  if (!globalThis.__BIOMECH_MODELS__?.[file]) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `${url}.js`;
+      script.onload = () => { script.remove(); resolve(); };
+      script.onerror = () => { script.remove(); reject(new Error('本地模型文件缺失，请保留完整 dist 文件夹')); };
+      document.body.append(script);
+    });
+  }
+  const encoded = globalThis.__BIOMECH_MODELS__?.[file];
+  if (!encoded) throw new Error('本地模型数据不可用');
+  return Uint8Array.from(atob(encoded), char => char.charCodeAt(0)).buffer;
+}
 
 export class SpecimenStage {
   constructor(container, onSelect, onInteract) {
@@ -105,18 +121,22 @@ export class SpecimenStage {
   async load(model, progress = () => {}) {
     const id=++this.loadId;
     if (!this.cache.has(model)) {
-      const url = `${import.meta.env.BASE_URL}models/${specimens[model].file}`;
-      const embedded = globalThis.__BIOMECH_MODELS__?.[specimens[model].file];
-      let gltf;
-      if (embedded) {
-        // The standalone build embeds GLB bytes so a file:// page never needs
-        // fetch() or a local HTTP server to load its specimen.
-        const binary = Uint8Array.from(atob(embedded), char => char.charCodeAt(0)).buffer;
-        progress(1);
-        gltf = await this.loader.parseAsync(binary, '');
+      const file = specimens[model].file;
+      const url = `${import.meta.env.BASE_URL}models/${file}`;
+      const total = globalThis.__BIOMECH_MODEL_BYTES__?.[file] || 0;
+      progress({ phase: 'download', loaded: 0, total, local: location.protocol === 'file:' });
+      let binary;
+      if (location.protocol === 'file:') {
+        binary = await localModel(url, file);
       } else {
-        gltf = await this.loader.loadAsync(url, e => progress(e.total ? e.loaded/e.total : 0));
+        const fileLoader = new THREE.FileLoader().setResponseType('arraybuffer');
+        binary = await fileLoader.loadAsync(url, event => {
+          progress({ phase: 'download', loaded: event.loaded, total: total || event.total });
+        });
       }
+      progress({ phase: 'parse', loaded: binary.byteLength, total: binary.byteLength });
+      await paintLoading();
+      const gltf = await this.loader.parseAsync(binary, url.slice(0, url.lastIndexOf('/') + 1));
       const root = gltf.scene;
       const nodes = new Map(), meshes = [], assemblies = [], details = [];
       root.traverse(o => {
@@ -152,6 +172,8 @@ export class SpecimenStage {
       this.cache.set(model,{root,nodes,meshes,assemblies,details,rig});
       root.visible=true;
       this.scene.add(root);
+      progress({ phase: 'render' });
+      await paintLoading();
       await this.renderer.compileAsync(this.scene,this.camera);
       root.visible=false;
     }
@@ -166,6 +188,7 @@ export class SpecimenStage {
     this.setWireframe(this.wireframe);
     this.makeLabels();
     this.view('iso',true);
+    progress({ phase: 'ready' });
     return true;
   }
 

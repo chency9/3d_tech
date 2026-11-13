@@ -82,3 +82,23 @@ body,#app{font-family:var(--cyber)}
 .panel-heading h2,.button-grid button,.transport-title b,.transport-title #chapter,.model-state>span{font-weight:700;letter-spacing:.12em}
 .button-grid button{white-space:nowrap}
 @media(max-width:600px){.parts-grid[data-specimen="scorpion"]{grid-template-columns:repeat(3,minmax(0,1fr))}.parts-grid[data-specimen="scorpion"] button{white-space:nowrap;font-size:11px;letter-spacing:.05em}}
+
+/* Model download progress is separate from parsing and GPU preparation. */
+.loading{width:min(420px,calc(100% - 32px));min-width:0;padding:28px;box-shadow:0 12px 70px #413c2914}
+.loading .loading-kicker{color:var(--accent);font:500 9px var(--cyber);letter-spacing:.14em;margin-top:18px}
+.loading b{font-size:18px;letter-spacing:.1em;margin-top:12px}
+.loading-metrics{display:flex;justify-content:space-between;align-items:baseline;width:100%;gap:12px;margin-top:26px;text-align:left}
+.loading #loading-detail{font-size:11px;color:#756d60;letter-spacing:.03em;line-height:1.6}
+#loading-percent{font:600 21px var(--cyber);color:var(--accent);white-space:nowrap}
+#loading-progress{display:block;appearance:none;border:0;border-radius:0;width:100%;height:5px;margin:12px 0 0;background:#ded7ca;accent-color:var(--accent)}
+#loading-progress::-webkit-progress-bar{background:#ded7ca}
+#loading-progress::-webkit-progress-value{background:var(--accent);transition:width .12s linear}
+#loading-progress::-moz-progress-bar{background:var(--accent)}
+#loading-progress:indeterminate{background:linear-gradient(90deg,#ded7ca 0 30%,var(--accent) 30% 65%,#ded7ca 65%);background-size:250% 100%;animation:loading-sweep 1.4s linear infinite}
+#loading-progress:indeterminate::-webkit-progress-bar{background:transparent}
+.loading-steps{display:flex;justify-content:space-between;gap:10px;padding:0;margin:18px 0 0;list-style:none;width:100%;font-size:10px;color:#9b9282;letter-spacing:.03em}
+.loading[data-phase=download] .loading-steps li:nth-child(1),.loading[data-phase=parse] .loading-steps li:nth-child(2),.loading[data-phase=render] .loading-steps li:nth-child(3){color:var(--accent);font-weight:700}
+.loading[data-phase=error] .loading-spinner{animation:none;border-color:var(--accent)}
+@keyframes loading-sweep{to{background-position:-250% 0}}
+@media(prefers-reduced-motion:reduce){#loading-progress:indeterminate{animation:none}}
+@media(max-width:600px){.loading{padding:24px 20px}.loading b{font-size:16px}.loading-steps{font-size:9px;gap:6px}}
