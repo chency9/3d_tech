@@ -9,7 +9,7 @@ import '@fontsource/noto-sans-sc/chinese-simplified-400.css';
 import '@fontsource/noto-sans-sc/chinese-simplified-500.css';
 import '@fontsource/noto-sans-sc/chinese-simplified-700.css';
 import './style.css';
-import { specimens, DURATION, solve, tourAt, clamp } from './kinematics.js';
+import { specimens, DURATION, solve, waveSignal, tourAt, clamp } from './kinematics.js';
 import { SpecimenStage } from './stage.js';
 
 const waveSVG = '<svg class="wave-chart" viewBox="0 0 200 46" preserveAspectRatio="none" aria-hidden="true"><path d="M0 23H200 M50 0V46 M100 0V46 M150 0V46" class="chart-grid"/><path id="wave" d="M0 23H200"/></svg>';
@@ -217,8 +217,7 @@ function updateHUD(pose) {
   if(!bee)$('servo-status').textContent=`${pose.supportCount} 足支撑 · ${8-pose.supportCount} 足摆动`;
   const wave=Array.from({length:80},(_,i)=>{
     const t=state.simulationTime-(79-i)/35;
-    const p=solve(state.model,state.mode,t,state.speed,state.explode,motionWeights);
-    const value=bee?p.wingAngle/.54:p.legs[0].angle/.24;
+    const value=waveSignal(state.model,state.mode,t,state.explode,motionWeights);
     return `${i?'L':'M'}${(i/79*200).toFixed(1)} ${(23-value*16).toFixed(1)}`;
   }).join(' ');
   $('wave').setAttribute('d',wave);

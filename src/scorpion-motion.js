@@ -65,25 +65,43 @@ function jawCycle(time,offset) {
   return mix(.07,.16,ease((p-.78)/.22));
 }
 
-export function scorpionPose(t,mode,explode=0,weights=null) {
+function gaitState(t,mode,explode,weights) {
   const activity=1-ease(explode/.32);
   const walk=(weights?.walk??(mode==='walk'?1:0))*activity;
-  const claw=(weights?.claw??(mode==='claw'?1:0))*activity;
-  const tail=(weights?.tail??(mode==='tail'?1:0))*activity;
   const phase=t*TAU*config.frequency;
   const body={
     position:[.028*Math.sin(phase)*walk,.010*Math.sin(t*1.35)*activity+.028*Math.cos(phase*2)*walk,0],
     pitch:.012*Math.sin(phase*2+.5)*walk,
     roll:.018*Math.sin(phase)*walk,
   };
+  return {activity,walk,body};
+}
+
+function gaitFoot(t,leg,walk,body) {
+  const cycle=footCycle(t*config.frequency+leg.phase);
+  const worldFoot=add(leg.foot,[.045*Math.sin(Math.PI*cycle.phase)*walk*(cycle.contact?0:leg.side),cycle.height*walk,cycle.travel*walk]);
+  const foot=worldToBody(worldFoot,body);
+  const angle=Math.atan2(foot[2]-leg.hip[2],Math.abs(foot[0]-leg.hip[0]))-Math.atan2(leg.foot[2]-leg.hip[2],Math.abs(leg.foot[0]-leg.hip[0]));
+  return {cycle,worldFoot,foot,angle};
+}
+
+// The chart needs one angle, not eight IK chains, hydraulic links and claws.
+// Use the same body/foot equations as the full pose to keep the signal exact.
+export function scorpionGaitAngle(t,mode,explode=0,weights=null) {
+  const {walk,body}=gaitState(t,mode,explode,weights);
+  return gaitFoot(t,restLegs[0],walk,body).angle;
+}
+
+export function scorpionPose(t,mode,explode=0,weights=null) {
+  const {activity,walk,body}=gaitState(t,mode,explode,weights);
+  const claw=(weights?.claw??(mode==='claw'?1:0))*activity;
+  const tail=(weights?.tail??(mode==='tail'?1:0))*activity;
   const legs=restLegs.map((leg,i)=>{
-    const cycle=footCycle(t*config.frequency+leg.phase);
-    const worldFoot=add(leg.foot,[.045*Math.sin(Math.PI*cycle.phase)*walk*(cycle.contact?0:leg.side),cycle.height*walk,cycle.travel*walk]);
-    const foot=worldToBody(worldFoot,body);
+    const {cycle,worldFoot,foot,angle}=gaitFoot(t,leg,walk,body);
     const solved=legIK(leg.hip,foot);
     const contact=walk<.01||cycle.contact;
     return {...solved,id:leg.id,worldFoot,contact,phase:cycle.phase,
-      angle:Math.atan2(foot[2]-leg.hip[2],Math.abs(foot[0]-leg.hip[0]))-Math.atan2(leg.foot[2]-leg.hip[2],Math.abs(leg.foot[0]-leg.hip[0])),
+      angle,
       load:Math.round(contact?36+13*Math.sin(Math.PI*clamp(cycle.phase/config.dutyFactor))*walk+3*(i%3):12+cycle.height*22),
     };
   });

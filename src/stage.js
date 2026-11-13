@@ -4,8 +4,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { specimens } from './kinematics.js';
 import { ScorpionRig } from './scorpion-rig.js';
+import { RenderBatches } from './render-batches.js';
 
 const TAU = Math.PI * 2;
+const X = new THREE.Vector3(1,0,0), Y = new THREE.Vector3(0,1,0), Z = new THREE.Vector3(0,0,1);
 const cameraViews = { iso: [7.8, 5.8, 10.3], side: [11.5, 3.1, .1], front: [0, 3.8, 13.5], top: [.01, 13.5, .01], detail: [4.5,4.4,6.0] };
 const paintLoading = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
@@ -94,6 +96,7 @@ export class SpecimenStage {
     this.cache = new Map();
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
+    this.labelPosition = new THREE.Vector3();
     this.labels = [];
     this.labelNodes = [];
     this.selected = 'all';
@@ -143,7 +146,10 @@ export class SpecimenStage {
         nodes.set(o.name,o);
         o.userData.basePosition=o.position.clone();
         o.userData.baseQuaternion=o.quaternion.clone();
-        if(o.userData.explodeVector)details.push(o);
+        if(o.userData.explodeVector) {
+          o.userData.explodeDirection=new THREE.Vector3(...o.userData.explodeVector);
+          details.push(o);
+        }
         if(o.userData.assembly) {
           o.updateWorldMatrix(true,true);
           const center=new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
@@ -154,6 +160,7 @@ export class SpecimenStage {
           assemblies.push(o);
         }
         if(o.isMesh) {
+          o.userData.renderMaterialId=o.material.uuid;
           o.castShadow=!o.material.transparent;
           o.receiveShadow=true;
           o.material=o.material.clone();
@@ -169,12 +176,22 @@ export class SpecimenStage {
         }
       });
       const rig=nodes.has('SC_chassis')?new ScorpionRig(nodes):null;
-      this.cache.set(model,{root,nodes,meshes,assemblies,details,rig});
+      const movingNodes=[...nodes.values()].filter(node=>node!==root&&(!node.isMesh||node.userData.explodeVector||(!rig&&node.name.endsWith('__01'))));
+      const movingSet=new Set(movingNodes);
+      for(const mesh of meshes) {
+        if(!movingSet.has(mesh)) { mesh.updateMatrix();mesh.matrixAutoUpdate=false; }
+      }
+      const batches=new RenderBatches(root,meshes,this.renderer.extensions.has('WEBGL_multi_draw'));
+      this.cache.set(model,{root,nodes,meshes,assemblies,details,rig,batches,movingNodes});
       root.visible=true;
       this.scene.add(root);
       progress({ phase: 'render' });
       await paintLoading();
       await this.renderer.compileAsync(this.scene,this.camera);
+      batches.setEnabled(true);
+      batches.update();
+      await this.renderer.compileAsync(this.scene,this.camera);
+      batches.setEnabled(false);
       root.visible=false;
     }
     if(id!==this.loadId) return false;
@@ -222,9 +239,14 @@ export class SpecimenStage {
       mesh.material.depthWrite=active&&!mesh.userData.originalTransparent;
       mesh.castShadow=active&&!mesh.userData.originalTransparent;
     });
+    this.current.batches.setEnabled(part==='all'&&!this.wireframe);
   }
 
-  setWireframe(value) { this.wireframe=value; this.current?.meshes.forEach(m=>m.material.wireframe=value); }
+  setWireframe(value) {
+    this.wireframe=value;
+    this.current?.meshes.forEach(m=>m.material.wireframe=value);
+    this.current?.batches.setEnabled(this.selected==='all'&&!value);
+  }
   view(name, instant=false) {
     this.cameraGoal=new THREE.Vector3(...cameraViews[name]);
     this.controls.target.set(0,this.model==='bee'?1.4:1.7,.35);
@@ -235,6 +257,7 @@ export class SpecimenStage {
     const {width,height}=this.container.getBoundingClientRect();
     if(!width||!height) return;
     this.renderer.setSize(width,height);
+    this.width=width;this.height=height;
     this.camera.aspect=width/height;
     this.camera.fov=width<650?42:36;
     this.camera.updateProjectionMatrix();
@@ -242,9 +265,8 @@ export class SpecimenStage {
 
   frame(pose, delta, time, tour, playing = true) {
     if(!this.current) { this.renderer.render(this.scene,this.camera); return; }
-    const {root,nodes,assemblies,details,rig}=this.current;
-    for(const node of nodes.values()) {
-      if(node===root) continue;
+    const {root,nodes,assemblies,details,rig,movingNodes}=this.current;
+    for(const node of movingNodes) {
       node.position.copy(node.userData.basePosition);
       node.quaternion.copy(node.userData.baseQuaternion);
     }
@@ -252,7 +274,6 @@ export class SpecimenStage {
       const node=nodes.get(name);
       if(node) node.rotateOnAxis(axis,angle);
     };
-    const X=new THREE.Vector3(1,0,0),Y=new THREE.Vector3(0,1,0),Z=new THREE.Vector3(0,0,1);
     if(rig) {
       rig.pose(pose);
     } else if(this.model==='scorpion') {
@@ -275,7 +296,7 @@ export class SpecimenStage {
     for(const node of assemblies) {
       if(!node.userData.explodeVector)node.position.addScaledVector(node.userData.explodeOffset,pose.explode);
     }
-    for(const node of details)node.position.addScaledVector(new THREE.Vector3(...node.userData.explodeVector),pose.explode);
+    for(const node of details)node.position.addScaledVector(node.userData.explodeDirection,pose.explode);
     // Lift ceramic shells away from each rigid assembly during teardown.
     for(const mesh of this.current.meshes) {
       if(!rig&&mesh.name.endsWith('__01')) mesh.position.y+=pose.explode*.65;
@@ -289,13 +310,14 @@ export class SpecimenStage {
       if(this.camera.position.distanceTo(this.cameraGoal)<.01) this.cameraGoal=null;
     }
     this.controls.update();
+    this.current.batches.update();
     this.renderer.render(this.scene,this.camera);
-    const w=this.container.clientWidth,h=this.container.clientHeight;
+    const w=this.width,h=this.height;
     for(const label of this.labels) {
       const visible=this.labelVisible&&label.anchor&&(this.selected==='all'||this.belongsTo(label.anchor,this.selected));
       label.el.hidden=!visible;
       if(!visible) continue;
-      const pos=label.anchor.getWorldPosition(new THREE.Vector3()).project(this.camera);
+      const pos=label.anchor.getWorldPosition(this.labelPosition).project(this.camera);
       const x=(pos.x*.5+.5)*w,y=(-pos.y*.5+.5)*h;
       label.el.style.transform=`translate(${x}px,${y}px)`;
       label.el.style.opacity=pos.z>1||x<120||x>w-120||y<70||y>h-120?'0':'1';

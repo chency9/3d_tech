@@ -37,6 +37,7 @@ BIOMECH 是一个离线优先的交互式机械生物实验室：桌面端展示
 - **赛博中文界面**：Orbitron 拉丁字形配合 Noto Sans SC 中文字形，统一字重、字距和橙色信号色。
 - **在线与离线交付**：网页通过独立 GLB 请求显示真实下载进度；保留完整 `dist` 文件夹后，也能双击 `index.html` 离线打开。
 - **模型加载进度**：显示已下载 MB、百分比、下载/解析/渲染三个阶段；下载失败时提供重试。
+- **保留精度的渲染优化**：原始顶点和机械交互保持完整；支持 multi-draw 的浏览器中，SC-8 整机绘制调用从 982 次降至约 24 次。[测量、画面对比与复现方法](docs/performance.md)。
 
 <p align="center">
   <img src="docs/screenshots/loading.png" alt="统一的全屏 Loading：模型下载字节数、真实百分比和加载阶段" width="100%" />
@@ -131,6 +132,7 @@ pwsh -NoProfile -File blender/export.ps1 -Blender "D:\Blender\blender.exe" -Blen
 src/
 ├─ main.js              页面结构、交互、状态与遥测
 ├─ stage.js             Three.js 场景、GLB 加载、材质、标注和相机
+├─ render-batches.js    保留原始几何与交互的批量绘制
 ├─ kinematics.js        标本定义、动作状态、导览时间轴
 ├─ scorpion-motion.js   SC-8 步态、尾节和钳爪运动学
 ├─ scorpion-rig.js      SC-8 腿部关节与液压连杆姿态
@@ -147,6 +149,8 @@ public/models/
 scripts/
 ├─ make-standalone.mjs  构建同时支持在线进度和本地双击的产物
 ├─ test-loading.mjs     暂停 HTML 与 GLB 下载，验证首屏和真实进度
+├─ profile-render.mjs   固定场景采样、Git 对照版本和 GPU/CPU 计时
+├─ compare-render.mjs   原始精度、画质设置、绘制调用和逐像素画面对比
 └─ test-file.mjs        通过 file:// 验证构建产物
 ```
 
@@ -167,6 +171,7 @@ npm run test:loading
 - 尾节错相、钳爪动作、蜜蜂翅膀和腹部动作。
 - 爆炸、隔离、重组、标签、线框、时间轴和键盘快捷键。
 - 390px 移动端无横向溢出。
+- 批量绘制下的直接点击拾取、线框往返，以及无 multi-draw 扩展的兼容路径。
 - `file://` 双击入口无页面错误、无资源请求失败，模型状态正常就绪。
 
 ## 参考

@@ -10,7 +10,9 @@
     "test": "playwright test",
     "test:file": "node scripts/test-file.mjs",
     "test:loading": "node scripts/test-loading.mjs",
-    "test:math": "node --test tests/kinematics.test.js tests/scorpion-motion.test.js"
+    "test:math": "node --test tests/kinematics.test.js tests/scorpion-motion.test.js tests/render-batches.test.js",
+    "profile:render": "node scripts/profile-render.mjs",
+    "compare:render": "node scripts/compare-render.mjs"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.2.8",

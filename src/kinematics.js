@@ -1,6 +1,6 @@
 // The conceptual mechanism, its pose and its instruments share this state.
 // Values describe this animation; they are not sensor measurements.
-import { scorpionPose } from './scorpion-motion.js';
+import { scorpionPose, scorpionGaitAngle } from './scorpion-motion.js';
 export const DURATION = 28;
 export const clamp = (x, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, x));
 export const smooth = (x) => { const t = clamp(x); return t * t * (3 - 2 * t); };
@@ -30,6 +30,12 @@ export function tourAt(time, model) {
   return { mode: model === 'bee' ? 'hover' : 'walk', part: 'all', explode: 0, chapter: '运行演示', stage: 5 };
 }
 
+const beeWingAngle = (mode,t,explode) => (mode==='hover'||mode==='flight')&&explode<.25 ? Math.sin(t*Math.PI*2*7.5)*.54 : .055;
+
+export function waveSignal(model,mode,t,explode=0,weights=null) {
+  return model==='scorpion' ? scorpionGaitAngle(t,mode,explode,weights)/.24 : beeWingAngle(mode,t,explode)/.54;
+}
+
 export function solve(model, mode, t, speed = 1, explode = 0, weights = null) {
   if(model==='scorpion') {
     const mechanism=scorpionPose(t,mode,explode,weights);
@@ -40,7 +46,7 @@ export function solve(model, mode, t, speed = 1, explode = 0, weights = null) {
   const walking = mode === 'walk' && explode < .25;
   const flying = (mode === 'hover' || mode === 'flight') && explode < .25;
   const frequency = model === 'bee' ? (flying ? 7.5 : 0) : (walking ? 1.2 : 0);
-  const wingAngle = flying ? Math.sin(phase * frequency) * .54 : .055;
+  const wingAngle = beeWingAngle(mode,t,explode);
   const clawOpen = mode === 'claw' ? .5 + .5 * Math.sin(phase * .32) : .20;
   const tailFlex = mode === 'tail' ? Math.sin(phase * .18) * .13 : 0;
   const abdomenOpen = mode === 'abdomen' ? .45 + .25 * Math.sin(phase * .23) : 0;

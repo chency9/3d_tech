@@ -101,3 +101,34 @@ test('a missing model produces a recoverable error instead of an endless loader'
   await page.getByRole('button',{name:'重新加载',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>window.biomech?.state.ready)).toBe(true);
 });
+
+test('batched render copies preserve direct picking, isolation and returning to the complete model',async({page})=>{
+  const lab=new LabPage(page);await lab.open();
+  await page.getByRole('button',{name:'标注 LABELS',exact:true}).click();
+  await lab.pickCenter();
+  await expect.poll(async()=>(await lab.snapshot()).state.part).not.toBe('all');
+  const part=(await lab.snapshot()).state.part;
+  await expect(page.locator(`[data-part="${part}"]`)).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'整机 ALL',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).state.part).toBe('all');
+  await page.getByRole('button',{name:'线框 WIRE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).stats.triangles).toBe(2);
+  await page.getByRole('button',{name:'线框 WIRE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).stats.triangles).toBeGreaterThan(1000000);
+});
+
+test('a browser without WEBGL_multi_draw keeps every model and control available',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(()=>{
+    const getExtension=WebGL2RenderingContext.prototype.getExtension;
+    WebGL2RenderingContext.prototype.getExtension=function(name) {
+      return name==='WEBGL_multi_draw'?null:getExtension.call(this,name);
+    };
+  });
+  const lab=new LabPage(page);await lab.open();
+  await expect.poll(async()=>(await lab.snapshot()).stats.calls).toBeGreaterThan(800);
+  await page.getByRole('button',{name:'拆解 EXPLODE',exact:true}).click();
+  await expect.poll(async()=>(await lab.snapshot()).state.explode).toBeGreaterThan(.95);
+  await lab.specimen('bee');await lab.specimen('scorpion');
+  expect(errors).toEqual([]);
+});

@@ -1,0 +1,170 @@
+[
+  {
+    "name": "0-scorpion-stand-all",
+    "calls": [
+      982,
+      24
+    ],
+    "cpuMedianMs": [
+      3.199999988079071,
+      1.2000000029802322
+    ],
+    "gpuMeanMs": [
+      12.079350620689656,
+      9.549786763636362
+    ],
+    "hudMedianMs": [
+      1.2000000029802322,
+      0.20000000298023224
+    ],
+    "meanChannelError": 0.0010524723374827109,
+    "changedPixelFraction": 0.00004250230520977409
+  },
+  {
+    "name": "1-scorpion-walk-all",
+    "calls": [
+      982,
+      24
+    ],
+    "cpuMedianMs": [
+      3.0999999940395355,
+      1.2000000029802322
+    ],
+    "gpuMeanMs": [
+      14.524468067796612,
+      8.913022315789473
+    ],
+    "hudMedianMs": [
+      1.0999999940395355,
+      0.10000000894069672
+    ],
+    "meanChannelError": 0.0010920931304748732,
+    "changedPixelFraction": 0.00004322268326417704
+  },
+  {
+    "name": "2-scorpion-tail-all",
+    "calls": [
+      982,
+      24
+    ],
+    "cpuMedianMs": [
+      3.2000000029802322,
+      1.1000000089406967
+    ],
+    "gpuMeanMs": [
+      15.417045527272725,
+      8.67214628571429
+    ],
+    "hudMedianMs": [
+      1.0999999940395355,
+      0.19999998807907104
+    ],
+    "meanChannelError": 0.001169173582295989,
+    "changedPixelFraction": 0.00004826532964499769
+  },
+  {
+    "name": "3-scorpion-stand-all",
+    "calls": [
+      982,
+      24
+    ],
+    "cpuMedianMs": [
+      3,
+      1.2000000029802322
+    ],
+    "gpuMeanMs": [
+      15.348925241379309,
+      8.817117754385965
+    ],
+    "hudMedianMs": [
+      1.0999999940395355,
+      0.20000000298023224
+    ],
+    "meanChannelError": 0.0005950322729368372,
+    "changedPixelFraction": 0.000028094744121715075
+  },
+  {
+    "name": "4-scorpion-claw-tail",
+    "calls": [
+      599,
+      599
+    ],
+    "cpuMedianMs": [
+      3,
+      3
+    ],
+    "gpuMeanMs": [
+      10.456897627118643,
+      6.7425366779661005
+    ],
+    "hudMedianMs": [
+      1,
+      0.19999998807907104
+    ],
+    "meanChannelError": 0.0007239799446749655,
+    "changedPixelFraction": 0.0000072037805440295065
+  },
+  {
+    "name": "5-scorpion-walk-all-wire",
+    "calls": [
+      982,
+      982
+    ],
+    "cpuMedianMs": [
+      2.9000000059604645,
+      3.6000000089406967
+    ],
+    "gpuMeanMs": [
+      21.369533629629633,
+      14.001047864406775
+    ],
+    "hudMedianMs": [
+      1,
+      0.10000000894069672
+    ],
+    "meanChannelError": 4.802520362686338e-7,
+    "changedPixelFraction": 0
+  },
+  {
+    "name": "6-bee-flight-all",
+    "calls": [
+      172,
+      26
+    ],
+    "cpuMedianMs": [
+      1.2999999970197678,
+      1
+    ],
+    "gpuMeanMs": [
+      5.970284474576272,
+      5.295987862068964
+    ],
+    "hudMedianMs": [
+      0.20000000298023224,
+      0.20000000298023224
+    ],
+    "meanChannelError": 0.001611005455663132,
+    "changedPixelFraction": 0.00004898570769940065
+  },
+  {
+    "name": "7-bee-abdomen-wings",
+    "calls": [
+      106,
+      106
+    ],
+    "cpuMedianMs": [
+      1.2000000029802322,
+      1.0999999940395355
+    ],
+    "gpuMeanMs": [
+      6.399409355932206,
+      6.901117830508475
+    ],
+    "hudMedianMs": [
+      0.20000000298023224,
+      0.10000000894069672
+    ],
+    "meanChannelError": 0.00000384201629014907,
+    "changedPixelFraction": 0
+  }
+]
